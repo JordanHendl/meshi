@@ -1,0 +1,12 @@
+[package]
+name = "meshi"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+glam = "0.24.0" 
+dashi = {path = "C:/Program Files/Git/wksp/git/dashi", features = ["dashi-serde"]}
+miso = {path = "C:/Program Files/Git/wksp/git/miso"}
+
+[lib]
+crate-type=["cdylib"]
