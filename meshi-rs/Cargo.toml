@@ -5,8 +5,12 @@ edition = "2021"
 
 [dependencies]
 glam = "0.24.0" 
-dashi = {path = "C:/Program Files/Git/wksp/git/dashi", features = ["dashi-serde"]}
-miso = {path = "C:/Program Files/Git/wksp/git/miso"}
+serde = {version = "1.0.210", features = ["derive"]}
+serde_json = "1.0.128"
+image = "0.24"
+fontdue = "0.9.2"
+dashi = {path = "/wksp/git/dashi", features = ["dashi-serde"]}
+miso = {path = "/wksp/git/miso"}
 
 [lib]
 crate-type=["cdylib"]

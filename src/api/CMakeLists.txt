@@ -7,7 +7,7 @@ target_include_directories(meshi INTERFACE
     $<INSTALL_INTERFACE:include>                           # During install
 )
 
-set_property(TARGET meshi PROPERTY CXX_STANDARD 17)
+#set_property(TARGET meshi PROPERTY CXX_STANDARD 17)
 
 # Optional: Specify C++ standard for the interface target
 target_compile_features(meshi INTERFACE cxx_std_17) # Adjust standard as needed

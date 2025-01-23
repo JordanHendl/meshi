@@ -28,7 +28,7 @@ if(WIN32)
   
   file(COPY ${MESHI_RS_LIBRARY} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Debug)
 elseif(UNIX)
-  set(MESHI_RS_LIBRARY ${MESHI_RS_PROJECT_DIR}/target/debug/meshi.so)
+  set(MESHI_RS_LIBRARY ${MESHI_RS_PROJECT_DIR}/target/debug/libmeshi.so)
   set_target_properties(meshi-rs PROPERTIES
     IMPORTED_LOCATION ${MESHI_RS_LIBRARY}
   )
