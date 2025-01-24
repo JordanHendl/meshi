@@ -21,5 +21,6 @@ namespace meshi {
 }
 
 extern "C" auto meshi_make_engine(const meshi::EngineBackendInfo& info) -> meshi::EngineBackend*;
+extern "C" auto meshi_update(meshi::EngineBackend& engine) -> void;
 //extern "C" auto meshi_register_renderable(MeshiEngine* engine) -> CHandle;
 //extern "C" auto meshi_update_renderable(MeshiEngine* engine) -> void;

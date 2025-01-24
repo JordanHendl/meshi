@@ -19,18 +19,30 @@ pub struct Renderable {}
 
 #[no_mangle]
 extern "C" fn meshi_make_engine(info: &MeshiEngineInfo) -> *mut MeshiEngine {
-    let cstr = unsafe { CStr::from_ptr(info.application_name) }
+    let appname = unsafe { CStr::from_ptr(info.application_name) }
         .to_str()
         .unwrap();
-    println!("Rust make engine: {}", cstr);
+    let mut appdir = unsafe { CStr::from_ptr(info.application_location) }
+        .to_str()
+        .unwrap();
+
+    if appdir.is_empty() {
+        appdir = ".";
+    }
+    println!("[MESHI] Initializing Engine");
+    println!("[MESHI] App Name: {}", appname);
+    println!("[MESHI] App Dir: {}", appdir);
     let l = MeshiEngine {
         render: RenderEngine::new(&RenderEngineInfo {
-            application_path: todo!(),
-            scene_info: todo!(),
+            application_path: appdir.to_string(),
+            scene_info: None,
         }),
     };
     return Box::into_raw(Box::new(l));
 }
+
+#[no_mangle]
+pub extern "C" fn meshi_update(engine: &mut MeshiEngine) {}
 
 #[no_mangle]
 pub extern "C" fn meshi_register_renderable(engine: &mut MeshiEngine) {}

@@ -11,6 +11,7 @@ use super::TTFont;
 use std::collections::HashMap;
 use std::fs;
 
+#[derive(Default)]
 pub struct ImageResource {
     pub cfg: json::ImageEntry,
     pub loaded: Option<Handle<miso::Texture>>,

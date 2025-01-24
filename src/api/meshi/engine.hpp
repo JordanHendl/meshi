@@ -22,7 +22,10 @@ public:
   };
 
   inline auto world() -> World & { return m_world; }
-
+  
+  inline auto update() -> void {
+    meshi_update(*m_backend);
+  }
 private:
   Engine(World w, EngineBackend *e) : m_world(w), m_backend(e){};
 

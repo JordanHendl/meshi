@@ -66,7 +66,7 @@ impl From<image::ImageError> for Error {
 impl From<std::io::Error> for Error {
     fn from(value: std::io::Error) -> Self {
         return Error::LoadingError(LoadingError {
-            entry: "[UNKNOWN]".to_string(),
+            entry: "IO Loading Error".to_string(),
             path: value.to_string(),
         });
     }

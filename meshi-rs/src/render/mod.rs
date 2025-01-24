@@ -38,14 +38,14 @@ impl RenderEngine {
 
         // The GPU context that holds all the data.
         let mut ctx = gpu::Context::new(&ContextInfo { device }).unwrap();
-        let scene = miso::MisoScene::new(
+        let mut scene = miso::MisoScene::new(
             &mut ctx,
             &miso::MisoSceneInfo {
                 cfg: cfg.scene_cfg_path,
             },
         );
         
-        let database = Database::new(cfg.database_path, &mut ctx, & mut scene);
+        let database = Database::new(cfg.database_path.as_ref().unwrap(), &mut ctx, & mut scene).unwrap();
         let mut s = Self { ctx, scene, database};
 
         s

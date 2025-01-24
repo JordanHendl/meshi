@@ -4,13 +4,15 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-glam = "0.24.0" 
+glam = "0.29.0" 
 serde = {version = "1.0.210", features = ["derive"]}
 serde_json = "1.0.128"
 image = "0.24"
 fontdue = "0.9.2"
-dashi = {path = "/wksp/git/dashi", features = ["dashi-serde"]}
-miso = {path = "/wksp/git/miso"}
+#dashi = {path = "/wksp/git/dashi", features = ["dashi-serde"]}
+#miso = {path = "/wksp/git/miso"}
+dashi = {path = "C:/Program Files/Git/wksp/git/dashi", features = ["dashi-serde"]}
+miso = {path = "C:/Program Files/Git/wksp/git/miso"}
 gltf = "1.4.1"  # For reading glTF files
 unzip3 = "1.0.0"
 

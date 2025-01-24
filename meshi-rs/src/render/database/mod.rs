@@ -30,6 +30,7 @@ impl Database {
         ctx: &mut dashi::Context,
         scene: &mut miso::MisoScene,
     ) -> Result<Self, Error> {
+        println!("Loading Database {}", format!("{}/db.json", base_path));
         let json_data = fs::read_to_string(format!("{}/db.json", base_path))?;
         let info: json::Database = serde_json::from_str(&json_data)?;
 
@@ -63,11 +64,46 @@ impl Database {
     }
 
     pub fn fetch_texture(&mut self, name: &str) -> Result<Handle<miso::Texture>, Error> {
-        todo!()
+        if let Some(thing) = self.images.get_mut(name) {
+            if thing.loaded.is_none() {
+                unsafe { thing.load_rgba8(&self.base_path, &mut *self.ctx, &mut *self.scene) };
+            }
+
+            if thing.loaded.is_none() {
+                return Err(Error::LoadingError(LoadingError {
+                    entry: thing.cfg.name.clone(),
+                    path: thing.cfg.path.clone(),
+                }));
+            } else {
+                return Ok(thing.loaded.as_ref().unwrap().clone());
+            }
+        }
+
+        return Err(Error::LookupError(LookupError {
+            entry: name.to_string(),
+        }));
     }
 
-    pub fn fetch_mesh(&mut self, name: &str) -> Result<Handle<miso::Mesh>, Error> {
-        todo!()
+    pub fn fetch_mesh(&mut self, name: &str) -> Result<Vec<MeshResource>, Error> {
+        let db: *mut Database = self;
+        if let Some(thing) = self.geometry.get_mut(name) {
+            if thing.loaded.is_none() {
+                unsafe { thing.load(&self.base_path, &mut *self.ctx, &mut *self.scene, &mut *db) };
+            }
+
+            if thing.loaded.is_none() {
+                return Err(Error::LoadingError(LoadingError {
+                    entry: thing.cfg.name.clone(),
+                    path: thing.cfg.path.clone(),
+                }));
+            } else {
+                return Ok(thing.loaded.as_ref().unwrap().clone());
+            }
+        }
+
+        return Err(Error::LookupError(LookupError {
+            entry: name.to_string(),
+        }));
     }
 }
 

@@ -7,15 +7,13 @@ add_custom_target(cargo_build ALL
     USES_TERMINAL
 )
 
-# Add a dependency target to wait on `cargo_build`
-add_custom_target(dependency_target
+add_custom_target(copy_meshi_library
     COMMENT "This target depends on cargo_build"
-    DEPENDS cargo_build
+    DEPENDS cargo_build meshi-rs-cpy
 )
 
-add_library(meshi-rs SHARED IMPORTED)
-add_dependencies(meshi-rs cargo_build)
 
+add_library(meshi-rs SHARED IMPORTED)
 
 if(WIN32)
   set(MESHI_RS_LIBRARY ${MESHI_RS_PROJECT_DIR}/target/debug/meshi.dll)
@@ -25,13 +23,17 @@ if(WIN32)
     IMPORTED_LOCATION ${MESHI_RS_LIBRARY}
     IMPORTED_IMPLIB ${MESHI_RS_IMPLIB}
   )
-  
-  file(COPY ${MESHI_RS_LIBRARY} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Debug)
 elseif(UNIX)
   set(MESHI_RS_LIBRARY ${MESHI_RS_PROJECT_DIR}/target/debug/libmeshi.so)
   set_target_properties(meshi-rs PROPERTIES
     IMPORTED_LOCATION ${MESHI_RS_LIBRARY}
   )
-
-  file(COPY ${MESHI_RS_LIBRARY} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 endif()
+
+add_custom_command(
+  OUTPUT meshi-rs-cpy
+  COMMAND ${CMAKE_COMMAND} -E copy ${MESHI_RS_LIBRARY} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+
+
+add_dependencies(meshi-rs copy_meshi_library)
+

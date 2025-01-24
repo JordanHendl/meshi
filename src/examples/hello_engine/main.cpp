@@ -5,6 +5,10 @@ auto main() -> int {
       .application_name = "hello-engine ffi",
   };
 
-  auto engine = meshi::Engine::make(info);
+  auto engine = meshi::Engine::make(info).unwrap();
+
+  while(true) {
+   engine.update(); 
+  }
   return 0;
 }
