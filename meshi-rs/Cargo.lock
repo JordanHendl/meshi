@@ -489,10 +489,12 @@ dependencies = [
  "dashi",
  "fontdue",
  "glam",
+ "gltf",
  "image 0.24.9",
  "miso",
  "serde",
  "serde_json",
+ "unzip3",
 ]
 
 [[package]]
@@ -935,6 +937,12 @@ name = "unicode-ident"
 version = "1.0.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "adb9e6ca4f869e1180728b7950e35922a7fc6397f7b641499e8f3ef06e50dc83"
+
+[[package]]
+name = "unzip3"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "99c0ec316ab08201476c032feb2f94a5c8ece5b209765c1fbc4430dd6e931ad6"
 
 [[package]]
 name = "urlencoding"

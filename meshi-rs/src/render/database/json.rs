@@ -1,45 +1,40 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Clone)]
-pub struct SpriteJSONEntry {
+pub struct ImageEntry {
     pub name: String,
-    pub image_path: String,
+    pub path: String,
 }
 
 #[derive(Deserialize, Serialize, Clone)]
-pub struct SpriteJSON {
-    pub sprites: Vec<SpriteJSONEntry>,
+pub struct Image {
+    pub images: Vec<ImageEntry>,
 }
 
 #[derive(Deserialize, Serialize, Clone)]
-pub struct SpriteSheetJSONSprite {
+pub struct MaterialEntry {
+   pub base_color: Option<String>,
+   pub normal: Option<String>,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
+pub struct Materials {
+    pub materials: Vec<MaterialEntry>,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
+pub struct GeometryEntry {
     pub name: String,
-    pub id: u32,
-    pub bounds: dashi::Rect2D,
+    pub path: String,
 }
 
 #[derive(Deserialize, Serialize, Clone)]
-pub struct SpriteSheetJSONAutoGen {
-    pub name: String,
-    pub bounds: dashi::Rect2D,
-    pub stride: u32,
+pub struct Geometry {
+    pub geometry: Vec<GeometryEntry>,
 }
 
 #[derive(Deserialize, Serialize, Clone)]
-pub struct SpriteSheetJSONEntry {
-    pub name: String,
-    pub image_path: String,
-    pub sprites: Option<Vec<SpriteSheetJSONSprite>>,
-    pub auto_gen: Option<SpriteSheetJSONAutoGen>,
-}
-
-#[derive(Deserialize, Serialize, Clone)]
-pub struct SpriteSheetJSON {
-    pub sprite_sheets: Vec<SpriteSheetJSONEntry>,
-}
-
-#[derive(Deserialize, Serialize, Clone)]
-pub struct TTFJSONEntry {
+pub struct TTFEntry {
     pub name: String,
     pub path: String,
     pub size: f64,
@@ -47,14 +42,14 @@ pub struct TTFJSONEntry {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
-pub struct TTFJSON {
-    pub fonts: Vec<TTFJSONEntry>,
+pub struct TTF {
+    pub fonts: Vec<TTFEntry>,
 }
 
 #[derive(Deserialize, Serialize, Clone)]
-pub struct DatabaseJSON {
-    pub sprite_cfg: Option<String>,
-    pub sprite_sheet_cfg: Option<String>,
-    pub ttf_cfg: Option<String>,
-    pub particle_cfg: Option<String>,
+pub struct Database {
+    pub images: Option<String>,
+    pub materials: Option<String>,
+    pub geometry: Option<String>,
+    pub ttf: Option<String>,
 }

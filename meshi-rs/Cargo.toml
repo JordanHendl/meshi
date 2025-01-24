@@ -11,6 +11,8 @@ image = "0.24"
 fontdue = "0.9.2"
 dashi = {path = "/wksp/git/dashi", features = ["dashi-serde"]}
 miso = {path = "/wksp/git/miso"}
+gltf = "1.4.1"  # For reading glTF files
+unzip3 = "1.0.0"
 
 [lib]
 crate-type=["cdylib"]
