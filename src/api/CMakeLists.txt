@@ -13,7 +13,7 @@ target_include_directories(meshi INTERFACE
 target_compile_features(meshi INTERFACE cxx_std_17) # Adjust standard as needed
 
 # Optional: Add any compiler flags or options
-#target_compile_options(meshi INTERFACE /std:c++latest)
+target_compile_options(meshi INTERFACE -Wno-return-type-c-linkage)
 
 # Optional: Add any dependencies for the interface target
 target_link_libraries(meshi INTERFACE meshi-rs glm)

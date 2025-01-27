@@ -1,4 +1,5 @@
 #pragma once
+#include <meshi/bits/base.hpp>
 #include <meshi/meshi_c_api.h>
 #include <meshi/bits/error.hpp>
 namespace meshi {
@@ -7,21 +8,31 @@ struct WorldInfo {
 };
 
 struct SpawnInfo {};
-class World {
+class World : private Object {
 public:
-  static auto make(WorldInfo info) -> Result<World, Error> {
-    return make_result<World, Error>(World{});
-  };
+  World() = default;
+  template <typename T> inline auto spawn_object() -> T* {
+    m_dirty = true;
+    return this->add_component<T>();
+  }
+  
+  inline auto update(float dt) -> void {
+    if(m_dirty) {
+      cache_world();
+      m_dirty = false;
+    }
 
-  template <typename T> inline auto spawn_entity(SpawnInfo info) -> void {}
-
-  template <typename T> inline auto spawn_denizen(SpawnInfo info) -> void {}
-
-  template <typename T> inline auto get_denizen() -> Result<T *, Error> {}
-
-  template <typename T> inline auto get_entity() -> Result<T *, Error> {}
-
+    for(auto* actor : m_actors) {
+      actor->update(dt);
+    }
+  }
 private:
-  EngineBackend* m_backend = nullptr;
+
+  inline auto cache_world() -> void {
+    this->filter_components<Actor>(&m_actors);  
+  }
+
+  bool m_dirty = true;
+  std::vector<Actor*> m_actors;
 };
 } // namespace meshi

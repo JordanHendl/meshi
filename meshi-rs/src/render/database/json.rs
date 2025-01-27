@@ -11,10 +11,12 @@ pub struct Image {
     pub images: Vec<ImageEntry>,
 }
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, Default)]
 pub struct MaterialEntry {
-   pub base_color: Option<String>,
-   pub normal: Option<String>,
+    pub name: String,
+    pub passes: Vec<String>,
+    pub base_color: Option<String>,
+    pub normal: Option<String>,
 }
 
 #[derive(Deserialize, Serialize, Clone)]
@@ -22,7 +24,7 @@ pub struct Materials {
     pub materials: Vec<MaterialEntry>,
 }
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, Default)]
 pub struct GeometryEntry {
     pub name: String,
     pub path: String,

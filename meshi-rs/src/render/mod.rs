@@ -1,13 +1,22 @@
-use dashi::*;
-use database::Database;
+use std::ffi::c_void;
 
-mod database;
-mod scene;
-mod config;
+use dashi::{
+    utils::{Handle, Pool},
+    *,
+};
+use database::Database;
+use miso::CameraInfo;
+use tracing::{info, Level};
+use tracing_subscriber::FmtSubscriber;
+
+use crate::object::{FFIMeshObjectInfo, MeshObject, MeshObjectInfo};
+pub mod config;
+pub mod database;
+pub mod event;
 
 pub struct SceneInfo<'a> {
-    models: &'a [&'a str],
-    images: &'a [&'a str],
+    pub models: &'a [&'a str],
+    pub images: &'a [&'a str],
 }
 
 #[derive(Default)]
@@ -16,10 +25,17 @@ pub struct RenderEngineInfo<'a> {
     pub scene_info: Option<SceneInfo<'a>>,
 }
 
+struct EventCallbackInfo {
+    event_cb: extern "C" fn(*mut event::Event, *mut c_void),
+    user_data: *mut c_void,
+}
 pub struct RenderEngine {
-    ctx: dashi::Context,
-    scene: miso::MisoScene,
+    ctx: Box<dashi::Context>,
+    scene: Box<miso::MisoScene>,
     database: Database,
+    event_pump: sdl2::EventPump,
+    event_cb: Option<EventCallbackInfo>,
+    mesh_objects: Pool<MeshObject>,
 }
 
 impl RenderEngine {
@@ -29,7 +45,7 @@ impl RenderEngine {
             .select(DeviceFilter::default().add_required_type(DeviceType::Dedicated))
             .unwrap_or_default();
 
-        println!("[MESHI] Initializing Render Engine with device {}", device);
+        info!("Initializing Render Engine with device {}", device);
 
         let cfg = config::RenderEngineConfig {
             scene_cfg_path: Some(format!("{}/miso_scene.json", info.application_path)),
@@ -37,18 +53,76 @@ impl RenderEngine {
         };
 
         // The GPU context that holds all the data.
-        let mut ctx = gpu::Context::new(&ContextInfo { device }).unwrap();
-        let mut scene = miso::MisoScene::new(
+        let mut ctx = Box::new(gpu::Context::new(&ContextInfo { device }).unwrap());
+        let event_pump = ctx.get_sdl_ctx().event_pump().unwrap();
+        let mut scene = Box::new(miso::MisoScene::new(
             &mut ctx,
             &miso::MisoSceneInfo {
                 cfg: cfg.scene_cfg_path,
             },
-        );
-        
-        let database = Database::new(cfg.database_path.as_ref().unwrap(), &mut ctx, & mut scene).unwrap();
-        let mut s = Self { ctx, scene, database};
+        ));
+
+        let database =
+            Database::new(cfg.database_path.as_ref().unwrap(), &mut ctx, &mut scene).unwrap();
+
+        let s = Self {
+            ctx,
+            scene,
+            database,
+            event_cb: None,
+            event_pump,
+            mesh_objects: Default::default(),
+        };
 
         s
+    }
+
+    pub fn register_mesh_object(&mut self, info: &FFIMeshObjectInfo) -> Handle<MeshObject> {
+        let info: MeshObjectInfo = info.into();
+        info!("Registering Mesh Object {} with material {}", info.mesh, info.material);
+        let object = info.make_object(&mut self.database, &mut self.scene);
+        self.mesh_objects.insert(object).unwrap()
+    }
+
+    pub fn set_mesh_object_transform(
+        &mut self,
+        handle: Handle<MeshObject>,
+        transform: &glam::Mat4,
+    ) {
+        if let Some(m) = self.mesh_objects.get_ref(handle) {
+            info!("Setting transform {}", transform);
+            self.scene.update_object_transform(m.handle, transform);
+        }
+    }
+
+    pub fn update(&mut self, delta_time: f32) {
+        for event in self.event_pump.poll_iter() {
+            if let Some(cb) = self.event_cb.as_mut() {
+                let mut e = event::Event::from_sdl2_event(event);
+                let c = cb.event_cb;
+                c(&mut e, cb.user_data);
+            }
+        }
+
+        self.scene.update();
+    }
+    
+    pub fn set_camera(&mut self, camera: &Mat4) {
+        self.scene.register_camera(&CameraInfo {
+            pass: todo!(),
+            transform: todo!(),
+            projection: todo!(),
+        });
+    }
+    pub fn set_event_cb(
+        &mut self,
+        event_cb: extern "C" fn(*mut event::Event, *mut c_void),
+        user_data: *mut c_void,
+    ) {
+        self.event_cb = Some(EventCallbackInfo {
+            event_cb,
+            user_data,
+        });
     }
 
     pub fn set_scene(&mut self, info: &SceneInfo) {

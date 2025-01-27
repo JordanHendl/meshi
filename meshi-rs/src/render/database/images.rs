@@ -3,8 +3,12 @@ use dashi::Context;
 use dashi::ImageInfo;
 use dashi::ImageViewInfo;
 use dashi::SamplerInfo;
+use image::ImageBuffer;
+use image::Rgba;
 use miso::MisoScene;
 use miso::TextureInfo;
+use tracing::{info, Level};
+use tracing_subscriber::FmtSubscriber;
 
 use super::json;
 use super::TTFont;
@@ -18,6 +22,70 @@ pub struct ImageResource {
 }
 
 impl ImageResource {
+    pub fn load_default_image(ctx: &mut Context, scene: &mut MisoScene) -> Handle<miso::Texture> {
+        // Define the size of the image
+        const WIDTH: u32 = 512;
+        const HEIGHT: u32 = 512;
+        const CHECKER_SIZE: u32 = 64;
+
+        // Create an ImageBuffer for the checkered pattern
+        let mut img = ImageBuffer::new(WIDTH, HEIGHT);
+
+        for y in 0..HEIGHT {
+            for x in 0..WIDTH {
+                // Determine the color based on the checker pattern
+                let is_light = ((x / CHECKER_SIZE) + (y / CHECKER_SIZE)) % 2 == 0;
+                let color = if is_light {
+                    Rgba([200, 50, 200, 255]) // Light gray
+                } else {
+                    Rgba([50, 15, 50, 255]) // Dark gray
+                };
+
+                img.put_pixel(x, y, color);
+            }
+        }
+
+        // Convert the image to RGBA8 format
+        let rgba_image = img;
+
+        let (width, height) = rgba_image.dimensions();
+        let bytes = rgba_image.into_raw();
+        assert!((width * height * 4) as usize == bytes.len());
+
+        let img = ctx
+            .make_image(&ImageInfo {
+                debug_name: "default_checkered",
+                dim: [width, height, 1],
+                layers: 1,
+                format: dashi::Format::RGBA8,
+                mip_levels: 1,
+                initial_data: Some(&bytes),
+            })
+            .unwrap();
+
+        let view = ctx
+            .make_image_view(&ImageViewInfo {
+                debug_name: "default_checkered",
+                img,
+                ..Default::default()
+            })
+            .unwrap();
+
+        let sampler = ctx
+            .make_sampler(&SamplerInfo {
+                ..Default::default()
+            })
+            .unwrap();
+
+        info!("Registering default texture..");
+        return scene.register_texture(&TextureInfo {
+            image: img,
+            view,
+            sampler,
+            dim: [width, height],
+        });
+    }
+
     pub fn load_rgba8(&mut self, base_path: &str, ctx: &mut Context, scene: &mut MisoScene) {
         let path = &format!("{}/{}", base_path, self.cfg.path.as_str());
         let img = image::open(&path).unwrap_or_default();
@@ -57,6 +125,7 @@ impl ImageResource {
             })
             .unwrap();
 
+        info!("Registering texture {}", self.cfg.name);
         self.loaded = Some(scene.register_texture(&TextureInfo {
             image: img,
             view,

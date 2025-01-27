@@ -3,6 +3,8 @@ use glam::{IVec4, Vec2, Vec3, Vec4};
 use gltf::Gltf;
 use miso::{MisoScene, Vertex};
 use serde::{Deserialize, Serialize};
+use tracing::{info, Level};
+use tracing_subscriber::FmtSubscriber;
 
 use super::{json, Database, ImageResource};
 use std::{collections::HashMap, fs, path::Path};
@@ -20,17 +22,28 @@ pub struct GeometryInfo {
 
 #[derive(Default, Clone)]
 pub struct MeshResource {
-    name: String,
-    m: Handle<miso::Mesh>,
-    mat: Handle<miso::Material>,
+    pub name: String,
+    pub m: Handle<miso::Mesh>,
+    pub mat: Handle<miso::Material>,
+}
+
+#[derive(Default, Clone)]
+pub struct ModelResource {
+    pub meshes: Vec<MeshResource>,
 }
 pub struct GeometryResource {
     pub cfg: json::GeometryEntry,
-    pub loaded: Option<Vec<MeshResource>>,
+    pub loaded: Option<ModelResource>,
 }
 
 impl GeometryResource {
-    pub fn load(&mut self, base_path: &str, ctx: &mut Context, scene: &mut MisoScene, db: &mut Database) {
+    pub fn load(
+        &mut self,
+        base_path: &str,
+        ctx: &mut Context,
+        scene: &mut MisoScene,
+        db: &mut Database,
+    ) {
         let file = format!("{}/{}", base_path, self.cfg.path);
         let mut meshes = Vec::new();
         if let Some(gltf) = load_gltf_model(&file) {
@@ -56,8 +69,18 @@ impl GeometryResource {
                     })
                     .unwrap();
 
-                let  base_color = mesh.material.textures.get(&TextureType::Diffuse).unwrap_or(&"".to_string()).clone();
-                let  normal = mesh.material.textures.get(&TextureType::Normal).unwrap_or(&"".to_string()).clone();
+                let base_color = mesh
+                    .material
+                    .textures
+                    .get(&TextureType::Diffuse)
+                    .unwrap_or(&"".to_string())
+                    .clone();
+                let normal = mesh
+                    .material
+                    .textures
+                    .get(&TextureType::Normal)
+                    .unwrap_or(&"".to_string())
+                    .clone();
                 let mat_info = miso::MaterialInfo {
                     name: mesh.material.name.clone(),
                     passes: vec!["ALL".to_string()],
@@ -65,8 +88,17 @@ impl GeometryResource {
                     normal: db.fetch_texture(&normal).unwrap_or_default(),
                 };
 
-                let mat = scene.register_material(&mat_info);
+                let mat: Handle<miso::Material> =
+                    if mat_info.base_color.valid() || mat_info.normal.valid() {
+                        info!("Registering Mesh Material {}.{}", self.cfg.name, mesh.name); 
+                        let m = scene.register_material(&mat_info);
+                        db.insert_material(&format!("{}.{}", self.cfg.name, mesh.name), m);
+                        m
+                    } else {
+                        Default::default()
+                    };
 
+                info!("Registering Mesh {}.{}", self.cfg.name, mesh.name); 
                 let m = scene.register_mesh(&miso::MeshInfo {
                     name: self.cfg.name.clone(),
                     vertices,
@@ -74,14 +106,14 @@ impl GeometryResource {
                     indices,
                     num_indices: mesh.indices.len(),
                 });
-
+                
                 meshes.push(MeshResource {
                     name: mesh.name.clone(),
                     m,
                     mat,
                 });
             }
-            self.loaded = Some(meshes);
+            self.loaded = Some(ModelResource { meshes });
         }
     }
 

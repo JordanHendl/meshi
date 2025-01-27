@@ -1,0 +1,14 @@
+[
+{
+  "directory": "C:/Program Files/Git/wksp/build/meshi",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\CLANG_~1.EXE -I\"C:/Program Files/Git/wksp/build/meshi/_deps/glm-src\" -O0 -g -Xclang -gcodeview -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -Wno-c++98-compat -Wno-c++98-compat-pedantic -o _deps\\glm-build\\glm\\CMakeFiles\\glm.dir\\detail\\glm.cpp.obj -c \"C:\\Program Files\\Git\\wksp\\build\\meshi\\_deps\\glm-src\\glm\\detail\\glm.cpp\"",
+  "file": "C:\\Program Files\\Git\\wksp\\build\\meshi\\_deps\\glm-src\\glm\\detail\\glm.cpp",
+  "output": "_deps\\glm-build\\glm\\CMakeFiles\\glm.dir\\detail\\glm.cpp.obj"
+},
+{
+  "directory": "C:/Program Files/Git/wksp/build/meshi",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\CLANG_~1.EXE -I\"C:/Program Files/Git/wksp/git/meshi/src/api\" -I\"C:/Program Files/Git/wksp/build/meshi/_deps/glm-src\" -O0 -g -Xclang -gcodeview -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -std=gnu++17 -o src\\examples\\hello_engine\\CMakeFiles\\hello_engine.dir\\main.cpp.obj -c \"C:\\Program Files\\Git\\wksp\\git\\meshi\\src\\examples\\hello_engine\\main.cpp\"",
+  "file": "C:\\Program Files\\Git\\wksp\\git\\meshi\\src\\examples\\hello_engine\\main.cpp",
+  "output": "src\\examples\\hello_engine\\CMakeFiles\\hello_engine.dir\\main.cpp.obj"
+}
+]
