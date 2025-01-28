@@ -115,8 +115,19 @@ pub extern "C" fn meshi_set_render_camera(
 ) {
     engine
         .render
-        .set_mesh_object_transform(handle.clone(), transform);
+        .set_camera(transform);
 }
+
+#[no_mangle]
+pub extern "C" fn meshi_set_render_projection(
+    engine: &mut MeshiEngine,
+    transform: &glam::Mat4,
+) {
+    engine
+        .render
+        .set_projection(transform);
+}
+
 
 #[no_mangle]
 pub extern "C" fn meshi_update(engine: *mut MeshiEngine) -> c_float {

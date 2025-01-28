@@ -5,6 +5,7 @@ use dashi::{
     *,
 };
 use database::Database;
+use glam::Mat4;
 use miso::CameraInfo;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
@@ -36,6 +37,7 @@ pub struct RenderEngine {
     event_pump: sdl2::EventPump,
     event_cb: Option<EventCallbackInfo>,
     mesh_objects: Pool<MeshObject>,
+    global_camera: Handle<miso::Camera>,
 }
 
 impl RenderEngine {
@@ -65,6 +67,12 @@ impl RenderEngine {
         let database =
             Database::new(cfg.database_path.as_ref().unwrap(), &mut ctx, &mut scene).unwrap();
 
+        let global_camera = scene.register_camera(&CameraInfo {
+            pass: "ALL",
+            transform: Default::default(),
+            projection: Default::default(),
+        });
+
         let s = Self {
             ctx,
             scene,
@@ -72,6 +80,7 @@ impl RenderEngine {
             event_cb: None,
             event_pump,
             mesh_objects: Default::default(),
+            global_camera,
         };
 
         s
@@ -79,7 +88,10 @@ impl RenderEngine {
 
     pub fn register_mesh_object(&mut self, info: &FFIMeshObjectInfo) -> Handle<MeshObject> {
         let info: MeshObjectInfo = info.into();
-        info!("Registering Mesh Object {} with material {}", info.mesh, info.material);
+        info!(
+            "Registering Mesh Object {} with material {}",
+            info.mesh, info.material
+        );
         let object = info.make_object(&mut self.database, &mut self.scene);
         self.mesh_objects.insert(object).unwrap()
     }
@@ -98,7 +110,7 @@ impl RenderEngine {
     pub fn update(&mut self, delta_time: f32) {
         for event in self.event_pump.poll_iter() {
             if let Some(cb) = self.event_cb.as_mut() {
-                let mut e = event::Event::from_sdl2_event(event);
+                let mut e: event::Event = event.into();
                 let c = cb.event_cb;
                 c(&mut e, cb.user_data);
             }
@@ -106,13 +118,13 @@ impl RenderEngine {
 
         self.scene.update();
     }
-    
+
+    pub fn set_projection(&mut self, proj: &Mat4) {
+        self.scene.update_camera_transform(self.global_camera, proj);
+    }
+
     pub fn set_camera(&mut self, camera: &Mat4) {
-        self.scene.register_camera(&CameraInfo {
-            pass: todo!(),
-            transform: todo!(),
-            projection: todo!(),
-        });
+        self.scene.update_camera_transform(self.global_camera, camera);
     }
     pub fn set_event_cb(
         &mut self,

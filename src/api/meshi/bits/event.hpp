@@ -7,6 +7,168 @@
 #include <unordered_map>
 #include <vector>
 namespace meshi {
+using vec2 = glm::vec2;
+
+enum class EventType {
+  Unknown = 0,
+  Quit = 1,
+  Pressed = 2, 
+  Released = 3,
+  Joystick = 4,
+  Motion2D = 5,
+};
+
+enum class EventSource {
+  Unknown = 0,
+  Key = 1,
+  Mouse = 2,
+  Gamepad = 3,
+};
+
+enum class KeyCode {
+  // Alphanumeric keys
+  A = 0,
+  B,
+  C,
+  D,
+  E,
+  F,
+  G,
+  H,
+  I,
+  J,
+  K,
+  L,
+  M,
+  N,
+  O,
+  P,
+  Q,
+  R,
+  S,
+  T,
+  U,
+  V,
+  W,
+  X,
+  Y,
+  Z,
+
+  // Number keys (top row)
+  Digit0,
+  Digit1,
+  Digit2,
+  Digit3,
+  Digit4,
+  Digit5,
+  Digit6,
+  Digit7,
+  Digit8,
+  Digit9,
+
+  // Function keys
+  F1,
+  F2,
+  F3,
+  F4,
+  F5,
+  F6,
+  F7,
+  F8,
+  F9,
+  F10,
+  F11,
+  F12,
+
+  // Modifier keys
+  Shift,
+  Control,
+  Alt,
+  Meta, // Windows key or Command key (Mac)
+
+  // Navigation keys
+  ArrowUp,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+
+  // Special keys
+  Escape,
+  Enter,
+  Space,
+  Tab,
+  Backspace,
+  Delete,
+  Insert,
+  Home,
+  End,
+  PageUp,
+  PageDown,
+
+  // Punctuation and symbols
+  Minus,        // -
+  Equals,       // =
+  LeftBracket,  // [
+  RightBracket, // ]
+  Backslash,    // \
+  Semicolon,    // ;
+  Apostrophe,   // '
+  Comma,        // ,
+  Period,       // .
+  Slash,        // /
+  GraveAccent,  // `
+
+  // Numpad keys
+  Numpad0,
+  Numpad1,
+  Numpad2,
+  Numpad3,
+  Numpad4,
+  Numpad5,
+  Numpad6,
+  Numpad7,
+  Numpad8,
+  Numpad9,
+  NumpadAdd,      // +
+  NumpadSubtract, // -
+  NumpadMultiply, // *
+  NumpadDivide,   // /
+  NumpadDecimal,  // .
+  NumpadEnter,
+
+  // Lock keys
+  CapsLock,
+  NumLock,
+  ScrollLock,
+
+  // Miscellaneous keys
+  PrintScreen,
+  Pause,
+  Menu,
+
+  // Undefined or custom keys
+  Undefined
+};
+
+struct PressPayload {
+  KeyCode key;
+  EventType previous;
+};
+
+struct Motion2DPayload {
+  vec2 motion;
+};
+union Payload {
+  PressPayload press;
+  Motion2DPayload motion2d; 
+};
+
+struct Event {
+  EventType type;
+  EventSource source;
+  Payload payload;
+  uint32_t timestamp;
+};
 
 // Define a filter function type for events
 using EventFilter = std::function<bool(const Event &)>;

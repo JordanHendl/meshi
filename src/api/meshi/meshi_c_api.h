@@ -3,63 +3,7 @@
 #include <glm/glm.hpp>
 
 namespace meshi {
-// Enum representing the type of the event.
-enum class EventType {
-  QUIT,
-  KEYDOWN,
-  KEYUP,
-  MOUSEBUTTONDOWN,
-  MOUSEBUTTONUP,
-  MOUSEMOTION,
-  MOUSEWHEEL,
-  UNKNOWN
-};
-
-// Struct representing a key event.
-struct KeyEvent {
-  int32_t scancode;
-  int32_t keycode;
-  int32_t state; // 0 = released, 1 = pressed
-  int32_t repeat;
-};
-
-// Struct representing a mouse button event.
-struct MouseButtonEvent {
-  int32_t button;
-  int32_t state; // 0 = released, 1 = pressed
-  int32_t clicks;
-  int32_t x;
-  int32_t y;
-};
-
-// Struct representing mouse motion.
-struct MouseMotionEvent {
-  int32_t x;
-  int32_t y;
-  int32_t xrel;
-  int32_t yrel;
-};
-
-// Struct representing a mouse wheel event.
-struct MouseWheelEvent {
-  int32_t x;
-  int32_t y;
-};
-
-// Union containing the event data.
-union EventData {
-  KeyEvent key;
-  MouseButtonEvent mouse_button;
-  MouseMotionEvent mouse_motion;
-  MouseWheelEvent mouse_wheel;
-};
-
-// Struct representing an SDL-style event.
-struct Event {
-  EventType event_type;
-  uint32_t timestamp;
-  EventData data;
-};
+struct Event;
 
 struct CHandle {
   std::uint16_t id;
@@ -104,5 +48,13 @@ extern "C" auto
 meshi_set_mesh_object_transform(meshi::EngineBackend &engine,
                                 meshi::Handle<meshi::FFIMeshObject> &handle,
                                 glm::mat4 &transform) -> void;
+  
+extern "C" auto 
+meshi_set_render_camera(meshi::EngineBackend* engine, glm::mat4& transform) -> void;
+
+extern "C" auto 
+meshi_set_render_projection(meshi::EngineBackend* engine, glm::mat4& transform) -> void;
+
+//
 // extern "C" auto meshi_register_renderable(MeshiEngine* engine) -> CHandle;
 // extern "C" auto meshi_update_renderable(MeshiEngine* engine) -> void;

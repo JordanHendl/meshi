@@ -1,34 +1,128 @@
 #include <iostream>
+#include <meshi/bits/camera.hpp>
+#include <meshi/bits/denizen.hpp>
 #include <meshi/meshi.hpp>
-
-class MyObject : public meshi::Actor {
+class MyObject : public meshi::Denizen {
 public:
-  MyObject() : m_event(meshi::engine()->event().make_registry(this)) {
-    auto comp = add_component<meshi::CubeMeshObject>();
+  MyObject()
+      : m_event(std::make_shared<meshi::ActionRegister<MyObject>>(
+            meshi::engine()->action().make_registry(this))) {
+    std::cout << "Making object!" << std::endl;
 
-    auto components = this->components<meshi::CubeMeshObject>();
+    // Subobjects make up things. Nice for grouping objects together.
+    // Note: Transforms do not propagate for subobjects.
+    m_cube = add_subobject<meshi::CubeMeshObject>();
 
-    m_event.register_event(
-        [](auto &event) { return event.event_type == meshi::EventType::QUIT; },
-        [this](auto &event) {});
+    // Make a camera. We'll move this later.
+    m_camera = meshi::engine()->world().spawn_object<meshi::Camera>();
+
+    auto d = glm::mat4();
+    this->add_attachment_point(std::string("camera"), d);
+    m_camera->set_owner(this);
+
+    m_event->register_action("Move Forward", &MyObject::move_camera_forward);
+    m_event->register_action("Move Left", &MyObject::move_camera_left);
+    m_event->register_action("Move Right", &MyObject::move_camera_right);
+    m_event->register_action("Move Back", &MyObject::move_camera_back);
+
+    this->activate();
   }
-  
+
   auto update(float dt) -> void override {
-//    std::cout << "dt: " << dt << std::endl;
+    // Note: Denizens need to apply their own movement in update().
+    apply_movement(dt);
   }
+
+  auto move_camera_forward(const meshi::Action &action) -> void {
+    std::cout << "MOVE FORWARD" << action.type << std::endl;
+//    this->append_velocity();
+  }
+
+  auto move_camera_left(const meshi::Action &action) -> void {
+    std::cout << "MOVE LEFT" << action.type << std::endl;
+//    this->append_velocity();
+  }
+
+  auto move_camera_right(const meshi::Action &action) -> void {
+    std::cout << "MOVE RIGHT" << action.type << std::endl;
+//    this->append_velocity();
+  }
+
+  auto move_camera_back(const meshi::Action &action) -> void {
+    std::cout << "MOVE BACK" << action.type << std::endl;
+//    this->append_velocity();
+  }
+
 private:
-  meshi::EventRegister<MyObject> m_event;
+  std::shared_ptr<meshi::ActionRegister<MyObject>> m_event;
+  meshi::CubeMeshObject *m_cube = nullptr;
+  meshi::Camera *m_camera = nullptr;
 };
 
 ////////////////////////////////////////////////////////////
 
-
 class Application {
 public:
   Application() : m_event(meshi::engine()->event().make_registry(this)) {
+    // Register quit event
     m_event.register_event(
-        [](auto &event) { return event.event_type == meshi::EventType::QUIT; },
-        [this](auto &event) { m_running = false; });
+        [](auto &event) { return event.type == meshi::EventType::Quit; },
+        [this](auto &event) {
+          std::cout << "QUITTING" << std::endl;
+          m_running = false;
+        });
+
+    // Move
+    meshi::engine()->action().register_action(
+        "Move Forward", [](const meshi::Event &event, meshi::Action &action) {
+          if (meshi::ActionHandler::is_just_pressed(event, action)) {
+            if (event.source == meshi::EventSource::Key &&
+                event.payload.press.key == meshi::KeyCode::W) {
+              action.type = "movement";
+              return true;
+            }
+          }
+          return false;
+        });
+
+    meshi::engine()->action().register_action(
+        "Move Left", [](const meshi::Event &event, meshi::Action &action) {
+          if (meshi::ActionHandler::is_just_pressed(event, action)) {
+            if (event.source == meshi::EventSource::Key &&
+                event.payload.press.key == meshi::KeyCode::A) {
+              action.type = "movement";
+              return true;
+            }
+          }
+          return false;
+        });
+
+    meshi::engine()->action().register_action(
+        "Move Right", [](const meshi::Event &event, meshi::Action &action) {
+          if (meshi::ActionHandler::is_just_pressed(event, action)) {
+            if (event.source == meshi::EventSource::Key &&
+                event.payload.press.key == meshi::KeyCode::D) {
+              action.type = "movement";
+              return true;
+            }
+          }
+          return false;
+        });
+
+    meshi::engine()->action().register_action(
+        "Move Back", [](const meshi::Event &event, meshi::Action &action) {
+          if (meshi::ActionHandler::is_just_pressed(event, action)) {
+            if (event.source == meshi::EventSource::Key &&
+                event.payload.press.key == meshi::KeyCode::S) {
+              action.type = "movement";
+              return true;
+            }
+          }
+          return false;
+        });
+
+
+
 
     meshi::engine()->world().spawn_object<MyObject>();
   }

@@ -2,7 +2,7 @@ use std::os::raw::c_uint;
 
 #[repr(C)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum EventType {
+enum EventType {
     Unknown = 0,
     Quit = 1,
     Pressed = 2,
@@ -13,7 +13,7 @@ pub enum EventType {
 
 #[repr(C)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum EventSource {
+enum EventSource {
     Unknown = 0,
     Key = 1,
     Mouse = 2,
@@ -22,7 +22,7 @@ pub enum EventSource {
 
 #[repr(C)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum KeyCode {
+enum KeyCode {
     // Alphanumeric keys
     A = 0,
     B,
@@ -149,34 +149,33 @@ pub enum KeyCode {
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
-pub struct Vec2 {
+struct Vec2 {
     x: f32,
     y: f32,
 }
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
-pub struct PressPayload {
+struct PressPayload {
     key: KeyCode,
     previous: EventType,
 }
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
-pub struct Motion2DPayload {
+struct Motion2DPayload {
     motion: Vec2,
 }
 
 #[repr(C)]
-#[derive(Clone, Copy)]
-pub union Payload {
+union Payload {
     press: PressPayload,
     motion2d: Motion2DPayload,
 }
 
 #[repr(C)]
-#[derive(Clone, Copy)]
-pub struct Event {
+#[derive(Debug, Clone, Copy)]
+struct Event {
     event_type: EventType,
     source: EventSource,
     payload: Payload,
