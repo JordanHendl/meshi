@@ -11,15 +11,12 @@ public:
 
     // Subobjects make up things. Nice for grouping objects together.
     // Note: Transforms do not propagate for subobjects.
-    m_cube = add_subobject<meshi::CubeMeshObject>();
+    m_cube = add_subobject<meshi::CubeMeshComponent>();
+    m_camera = add_subobject<meshi::CameraComponent>();
 
-    // Make a camera. We'll move this later.
-    m_camera = meshi::engine()->world().spawn_object<meshi::Camera>();
-
+    this->m_root_component = m_camera;
+    m_cube->attach_to(m_camera);
     auto d = glm::mat4();
-    this->add_attachment_point(std::string("camera"), d);
-    m_camera->set_owner(this);
-
     m_event->register_action("Move Forward", &MyObject::move_camera_forward);
     m_event->register_action("Move Left", &MyObject::move_camera_left);
     m_event->register_action("Move Right", &MyObject::move_camera_right);
@@ -29,34 +26,34 @@ public:
   }
 
   auto update(float dt) -> void override {
+    meshi::Denizen::update(dt);
     // Note: Denizens need to apply their own movement in update().
-    apply_movement(dt);
   }
 
   auto move_camera_forward(const meshi::Action &action) -> void {
     std::cout << "MOVE FORWARD" << action.type << std::endl;
-//    this->append_velocity();
+    //    this->append_velocity();
   }
 
   auto move_camera_left(const meshi::Action &action) -> void {
     std::cout << "MOVE LEFT" << action.type << std::endl;
-//    this->append_velocity();
+    //    this->append_velocity();
   }
 
   auto move_camera_right(const meshi::Action &action) -> void {
     std::cout << "MOVE RIGHT" << action.type << std::endl;
-//    this->append_velocity();
+    //    this->append_velocity();
   }
 
   auto move_camera_back(const meshi::Action &action) -> void {
     std::cout << "MOVE BACK" << action.type << std::endl;
-//    this->append_velocity();
+    //    this->append_velocity();
   }
 
 private:
   std::shared_ptr<meshi::ActionRegister<MyObject>> m_event;
-  meshi::CubeMeshObject *m_cube = nullptr;
-  meshi::Camera *m_camera = nullptr;
+  meshi::CubeMeshComponent *m_cube = nullptr;
+  meshi::CameraComponent *m_camera = nullptr;
 };
 
 ////////////////////////////////////////////////////////////
@@ -120,9 +117,6 @@ public:
           }
           return false;
         });
-
-
-
 
     meshi::engine()->world().spawn_object<MyObject>();
   }

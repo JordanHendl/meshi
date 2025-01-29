@@ -28,6 +28,10 @@ public:
     return s.get();
   }
 
+  template <typename T> inline auto is_type() -> bool {
+    return (std::dynamic_pointer_cast<T>(this));
+  }
+
   // Provides filtered vector of all subobjects of that type
   template <typename T> auto subobjects() -> std::vector<T *> {
     auto o = std::vector<T *>();
@@ -71,25 +75,84 @@ protected:
   bool m_active = false;
 };
 
+class Actor;
 class Component : public Object {
 public:
   virtual ~Component() = default;
-  virtual auto name() -> std::string_view = 0;
+  virtual auto on_activation() -> void {};
+  virtual auto on_deactivation() -> void {};
+  virtual auto update(float dt) -> void {
+    for(auto* child : m_children) {
+      child->update(dt);
+    }
+  };
+  //////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////
+  ///
+  inline auto activate() -> void {
+    if (!m_active)
+      on_activation();
+    m_active = true;
+  }
+  inline auto deactivate() -> void {
+    if (m_active)
+      on_deactivation();
+    m_active = false;
+  }
+
+  // Detaches from any parent component.
+  inline auto detach() -> void {
+    if (m_parent) {
+      auto iter =
+          std::find_if(std::begin(m_parent->m_children), std::end(m_children),
+                       [this](auto c) { return c == this; });
+      if (iter != std::end(m_parent->m_children))
+        m_parent->m_children.erase(iter);
+
+      deactivate();
+    }
+  }
+  inline auto active() -> bool { return m_active; }
+
+  inline auto attach_to(Component *parent) -> void {
+    m_parent = parent;
+    parent->m_children.push_back(this);
+  }
+
+  // Traverses up the component chain to retrieve the parent actor, if there is
+  // one.
+  inline auto get_actor() -> Actor * {
+    auto ptr = this;
+    while (ptr->m_parent != nullptr) {
+      ptr = ptr->m_parent;
+    }
+
+    return ptr->m_actor;
+  }
+
+protected:
+  Actor *m_actor = nullptr;
+  Component *m_parent = nullptr;
+  std::vector<Component *> m_children;
+  bool m_active = false;
 };
 
 class Actor : public Object {
 public:
   Actor() = default;
   virtual ~Actor() = default;
-  virtual auto update(float dt) -> void = 0;
+  virtual auto update(float dt) -> void {
+    if (active() && m_root_component) {
+      m_root_component->update(dt);
+    }
+  };
   virtual auto on_activation() -> void {};
   ///////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////
 
-  inline auto get_forward_dir() -> glm::vec3 {
-
-  }
+  inline auto get_forward_dir() -> glm::vec3 {}
 
   inline auto local_transform() -> glm::mat4 & { return m_transform; }
   inline auto world_transform() -> glm::mat4 {
@@ -141,12 +204,20 @@ public:
     m_active = true;
   }
 
+  inline auto root_component() -> Component * { return m_root_component; }
+
   inline auto deactivate() -> void { m_active = false; }
 
+  inline auto set_root_component(Component *comp) -> void {
+    m_root_component = comp;
+  }
+
 protected:
+  Component *m_root_component = nullptr;
   Actor *m_parent = nullptr;
   bool m_active = false;
   std::unordered_map<std::string, glm::mat4> m_attachment_points;
   glm::mat4 m_transform = {};
 };
+
 } // namespace meshi

@@ -23,6 +23,11 @@ public:
     // Check collisions and resolve them
     resolve_collisions();
   }
+  
+  virtual auto update(float dt) -> void override {
+    Actor::update(dt);
+    apply_movement(dt);
+  }
 
   // Set velocity
   inline auto set_velocity(const glm::vec3 &velocity) -> void {

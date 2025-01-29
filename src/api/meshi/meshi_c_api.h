@@ -21,7 +21,7 @@ struct EngineBackendInfo {
   const char *application_root = "";
 };
 
-struct MeshObjectInfo {
+struct MeshComponentInfo {
   const char *mesh = "";
   const char *material = "";
   glm::mat4 transform = glm::mat4(1.0);
@@ -31,7 +31,7 @@ template <typename T> struct Handle {
   std::uint16_t id = 0;
   std::uint16_t gen = 0;
 };
-struct FFIMeshObject;
+struct FFIMeshComponent;
 } // namespace meshi
 
 extern "C" auto meshi_make_engine(const meshi::EngineBackendInfo &info)
@@ -42,11 +42,11 @@ meshi_register_event_callback(meshi::EngineBackend *engine, void *user_data,
 
 extern "C" auto meshi_update(meshi::EngineBackend *engine) -> float;
 extern "C" auto meshi_register_mesh_object(meshi::EngineBackend *engine,
-                                           meshi::MeshObjectInfo &info)
-    -> meshi::Handle<meshi::FFIMeshObject>;
+                                           meshi::MeshComponentInfo &info)
+    -> meshi::Handle<meshi::FFIMeshComponent>;
 extern "C" auto
 meshi_set_mesh_object_transform(meshi::EngineBackend &engine,
-                                meshi::Handle<meshi::FFIMeshObject> &handle,
+                                meshi::Handle<meshi::FFIMeshComponent> &handle,
                                 glm::mat4 &transform) -> void;
   
 extern "C" auto 

@@ -1,20 +1,20 @@
 #pragma once
 #include "meshi/engine.hpp"
+#include "meshi/bits/component.hpp"
 #include "meshi/meshi_c_api.h"
 #include <meshi/bits/base.hpp>
 #include <meshi/bits/util/slice.hpp>
 namespace meshi {
-class Renderable : public Component {
+class RenderableComponent : public ActorComponent {
 public:
-  Renderable() {}
-
-  virtual ~Renderable() = default;
+  RenderableComponent() {}
+  virtual ~RenderableComponent() = default;
 };
 
-class MeshObject : public Renderable {
+class MeshComponent : public RenderableComponent {
 public:
-  using CreateInfo = MeshObjectInfo;
-  MeshObject(MeshObjectInfo info) {
+  using CreateInfo = MeshComponentInfo;
+  MeshComponent(MeshComponentInfo info) {
     auto backend = engine()->backend();
     m_handle = meshi_register_mesh_object(backend, info);
     m_name = info.mesh;
@@ -22,37 +22,29 @@ public:
 
   virtual auto name() -> std::string_view { return m_name; }
 
-  virtual auto set_transform(glm::mat4 &transform) -> void {
-    m_transform = transform;
-  }
-
   virtual auto update(float dt) -> void {
     meshi_set_mesh_object_transform(*engine()->backend(), m_handle,
                                     m_transform);
   }
 
-  virtual ~MeshObject() = default;
+  virtual ~MeshComponent() = default;
 
 protected:
   std::string m_name;
-  Handle<FFIMeshObject> m_handle;
+  Handle<FFIMeshComponent> m_handle;
   glm::mat4 m_transform;
 };
 
-struct CubeMeshObjectInfo {
+struct CubeMeshComponentInfo {
   const char *material = "";
 };
-class CubeMeshObject : public MeshObject {
+class CubeMeshComponent : public MeshComponent {
 public:
-  using CreatEInfo = CubeMeshObjectInfo;
-  CubeMeshObject(CubeMeshObjectInfo info = {})
-      : MeshObject(MeshObjectInfo{
+  using CreatEInfo = CubeMeshComponentInfo;
+  CubeMeshComponent(CubeMeshComponentInfo info = {})
+      : MeshComponent(MeshComponentInfo{
             .mesh = "MESHI.CUBE",
             .material = info.material,
         }) {}
-};
-
-class Entity : public Renderable {
-public:
 };
 } // namespace meshi
