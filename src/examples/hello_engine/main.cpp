@@ -1,7 +1,55 @@
 #include <iostream>
-#include <meshi/bits/camera.hpp>
-#include <meshi/bits/denizen.hpp>
+#include <meshi/bits/components/camera_component.hpp>
+#include <meshi/bits/components/cube_mesh_component.hpp>
+#include <meshi/bits/objects/denizen.hpp>
 #include <meshi/meshi.hpp>
+
+class Cube : public meshi::Actor {
+public:
+  Cube() {
+    add_subobject<meshi::MeshComponent>(meshi::MeshComponent::CreateInfo{
+                                            .render_info =
+                                                {
+                                                    .mesh = "witch.Cesium_Milk_Truck",
+                                                },
+                                            .rigid_body_info = {},
+                                        })
+        ->attach_to(root_component());
+
+    add_subobject<meshi::MeshComponent>(meshi::MeshComponent::CreateInfo{
+                                            .render_info =
+                                                {
+                                                    .mesh = "witch.Wheels",
+                                                },
+                                            .rigid_body_info = {},
+                                        })
+        ->attach_to(root_component());
+
+//    add_subobject<meshi::MeshComponent>(meshi::MeshComponent::CreateInfo{
+//                                            .render_info =
+//                                                {
+//                                                    .mesh = "witch.Cube.003",
+//                                                },
+//                                            .rigid_body_info = {},
+//                                        })
+//        ->attach_to(root_component());
+//
+//    m_cube =
+//        add_subobject<meshi::MeshComponent>(meshi::MeshComponent::CreateInfo{
+//            .render_info =
+//                {
+//                    .mesh = "witch.Cube.014",
+//                },
+//            .rigid_body_info = {},
+//        });
+//
+//    m_cube->attach_to(root_component());
+  }
+
+private:
+  meshi::MeshComponent *m_cube = nullptr;
+};
+
 class MyObject : public meshi::Denizen {
 public:
   MyObject()
@@ -11,48 +59,46 @@ public:
 
     // Subobjects make up things. Nice for grouping objects together.
     // Note: Transforms do not propagate for subobjects.
-    m_cube = add_subobject<meshi::CubeMeshComponent>();
     m_camera = add_subobject<meshi::CameraComponent>();
+    // Attach components to our root.
+    m_camera->attach_to(root_component());
+    m_camera->apply_to_world();
 
-    this->m_root_component = m_camera;
-    m_cube->attach_to(m_camera);
-    auto d = glm::mat4();
     m_event->register_action("Move Forward", &MyObject::move_camera_forward);
     m_event->register_action("Move Left", &MyObject::move_camera_left);
     m_event->register_action("Move Right", &MyObject::move_camera_right);
     m_event->register_action("Move Back", &MyObject::move_camera_back);
-
-    this->activate();
   }
 
-  auto update(float dt) -> void override {
-    meshi::Denizen::update(dt);
-    // Note: Denizens need to apply their own movement in update().
-  }
+  auto update(float dt) -> void override { meshi::Denizen::update(dt); }
 
+  static constexpr auto MOVEMENT_SPEED = 10.0;
   auto move_camera_forward(const meshi::Action &action) -> void {
-    std::cout << "MOVE FORWARD" << action.type << std::endl;
-    //    this->append_velocity();
+    auto translation = this->front() * glm::vec3(MOVEMENT_SPEED);
+    auto transform = glm::translate(m_camera->world_transform(), translation);
+    m_camera->set_transform(transform);
   }
 
   auto move_camera_left(const meshi::Action &action) -> void {
-    std::cout << "MOVE LEFT" << action.type << std::endl;
-    //    this->append_velocity();
+    auto translation = -this->right() * glm::vec3(MOVEMENT_SPEED);
+    auto transform = glm::translate(m_camera->world_transform(), translation);
+    m_camera->set_transform(transform);
   }
 
   auto move_camera_right(const meshi::Action &action) -> void {
-    std::cout << "MOVE RIGHT" << action.type << std::endl;
-    //    this->append_velocity();
+    auto translation = this->right() * glm::vec3(MOVEMENT_SPEED);
+    auto transform = glm::translate(m_camera->world_transform(), translation);
+    m_camera->set_transform(transform);
   }
 
   auto move_camera_back(const meshi::Action &action) -> void {
-    std::cout << "MOVE BACK" << action.type << std::endl;
-    //    this->append_velocity();
+    auto translation = -this->front() * glm::vec3(MOVEMENT_SPEED);
+    auto transform = glm::translate(m_camera->world_transform(), translation);
+    m_camera->set_transform(transform);
   }
 
 private:
   std::shared_ptr<meshi::ActionRegister<MyObject>> m_event;
-  meshi::CubeMeshComponent *m_cube = nullptr;
   meshi::CameraComponent *m_camera = nullptr;
 };
 
@@ -69,7 +115,7 @@ public:
           m_running = false;
         });
 
-    // Move
+    // Register Actions to enable reacting to input.
     meshi::engine()->action().register_action(
         "Move Forward", [](const meshi::Event &event, meshi::Action &action) {
           if (meshi::ActionHandler::is_just_pressed(event, action)) {
@@ -118,7 +164,9 @@ public:
           return false;
         });
 
-    meshi::engine()->world().spawn_object<MyObject>();
+    // Spawn our object, and activate it.
+    meshi::engine()->world().spawn_object<Cube>()->activate();
+    meshi::engine()->world().spawn_object<MyObject>()->activate();
   }
 
   auto run() -> void {

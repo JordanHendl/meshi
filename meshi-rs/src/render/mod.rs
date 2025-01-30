@@ -51,7 +51,7 @@ impl RenderEngine {
 
         let cfg = config::RenderEngineConfig {
             scene_cfg_path: Some(format!("{}/miso_scene.json", info.application_path)),
-            database_path: Some(format!("{}/database/", info.application_path)),
+            database_path: Some(format!("{}/database", info.application_path)),
         };
 
         // The GPU context that holds all the data.
@@ -120,7 +120,7 @@ impl RenderEngine {
     }
 
     pub fn set_projection(&mut self, proj: &Mat4) {
-        self.scene.update_camera_transform(self.global_camera, proj);
+        self.scene.update_camera_projection(self.global_camera, proj);
     }
 
     pub fn set_camera(&mut self, camera: &Mat4) {

@@ -1,5 +1,5 @@
 use dashi::{utils::Handle, BufferInfo, Context};
-use glam::{IVec4, Vec2, Vec3, Vec4};
+use glam::{IVec4, Mat4, Quat, Vec2, Vec3, Vec4};
 use gltf::Gltf;
 use miso::{MisoScene, Vertex};
 use serde::{Deserialize, Serialize};
@@ -45,12 +45,15 @@ impl GeometryResource {
         db: &mut Database,
     ) {
         let file = format!("{}/{}", base_path, self.cfg.path);
+
         let mut meshes = Vec::new();
-        if let Some(gltf) = load_gltf_model(&file) {
+        if let Some(gltf) = load_gltf_model(&file, db) {
             for mesh in gltf.meshes {
+                let name = format!("{}.{}", self.cfg.name, mesh.name);
+                info!("Loading Mesh {}...", &name);
                 let vertices = ctx
                     .make_buffer(&BufferInfo {
-                        debug_name: &format!("{} Vertices", self.cfg.name),
+                        debug_name: &format!("{} Vertices", name),
                         byte_size: (std::mem::size_of::<miso::Vertex>() * mesh.vertices.len())
                             as u32,
                         visibility: dashi::MemoryVisibility::Gpu,
@@ -61,7 +64,7 @@ impl GeometryResource {
 
                 let indices = ctx
                     .make_buffer(&BufferInfo {
-                        debug_name: &format!("{} Indices", self.cfg.name),
+                        debug_name: &format!("{} Indices", name),
                         byte_size: (std::mem::size_of::<u32>() * mesh.indices.len()) as u32,
                         visibility: dashi::MemoryVisibility::Gpu,
                         usage: dashi::BufferUsage::INDEX,
@@ -73,14 +76,22 @@ impl GeometryResource {
                     .material
                     .textures
                     .get(&TextureType::Diffuse)
-                    .unwrap_or(&"".to_string())
+                    .unwrap_or(&"[NOT FOUND]".to_string())
                     .clone();
                 let normal = mesh
                     .material
                     .textures
                     .get(&TextureType::Normal)
-                    .unwrap_or(&"".to_string())
+                    .unwrap_or(&"[NOT FOUND]".to_string())
                     .clone();
+
+                info!(
+                    "Attempting to load material {}.{} Textures:
+                      -- Base Color : {}
+                      -- Normal: {}",
+                    name, mesh.material.name, base_color, normal
+                );
+
                 let mat_info = miso::MaterialInfo {
                     name: mesh.material.name.clone(),
                     passes: vec!["ALL".to_string()],
@@ -88,17 +99,11 @@ impl GeometryResource {
                     normal: db.fetch_texture(&normal).unwrap_or_default(),
                 };
 
-                let mat: Handle<miso::Material> =
-                    if mat_info.base_color.valid() || mat_info.normal.valid() {
-                        info!("Registering Mesh Material {}.{}", self.cfg.name, mesh.name); 
-                        let m = scene.register_material(&mat_info);
-                        db.insert_material(&format!("{}.{}", self.cfg.name, mesh.name), m);
-                        m
-                    } else {
-                        Default::default()
-                    };
+                info!("Registering Mesh Material {}", &name);
+                let mat = scene.register_material(&mat_info);
+                db.insert_material(&name, mat);
 
-                info!("Registering Mesh {}.{}", self.cfg.name, mesh.name); 
+                info!("Registering Mesh {}", &name);
                 let m = scene.register_mesh(&miso::MeshInfo {
                     name: self.cfg.name.clone(),
                     vertices,
@@ -106,7 +111,7 @@ impl GeometryResource {
                     indices,
                     num_indices: mesh.indices.len(),
                 });
-                
+
                 meshes.push(MeshResource {
                     name: mesh.name.clone(),
                     m,
@@ -114,6 +119,8 @@ impl GeometryResource {
                 });
             }
             self.loaded = Some(ModelResource { meshes });
+        } else {
+            info!("Failed to load!");
         }
     }
 
@@ -139,15 +146,20 @@ impl From<json::Geometry> for HashMap<String, GeometryResource> {
     }
 }
 
-pub fn load_db_geometries(cfg: &json::Database) -> Option<json::Geometry> {
+pub fn load_db_geometries(base_path: &str, cfg: &json::Database) -> Option<json::Geometry> {
     match &cfg.geometry {
-        Some(path) => match fs::read_to_string(path) {
-            Ok(json_data) => {
-                let info: json::Geometry = serde_json::from_str(&json_data).unwrap();
-                return Some(info);
+        Some(path) => {
+            let rpath = format!("{}/{}", base_path, path);
+            info!("Found geometry path {}", &rpath);
+            match fs::read_to_string(&rpath) {
+                Ok(json_data) => {
+                    info!("Loaded geometry database registry {}!", &rpath);
+                    let info: json::Geometry = serde_json::from_str(&json_data).unwrap();
+                    return Some(info);
+                }
+                Err(_) => return None,
             }
-            Err(_) => return None,
-        },
+        }
         None => return None,
     };
 }
@@ -183,109 +195,258 @@ struct Model {
     pub meshes: Vec<Mesh>,
 }
 
-fn load_gltf_model<P: AsRef<Path>>(path: P) -> Option<Model> {
-    let (gltf, buffers, _) = gltf::import(path).expect("Failed to load glTF file");
-    let mut meshes = Vec::new();
+fn build_parent_map(gltf: &gltf::Document) -> HashMap<usize, usize> {
+    let mut parent_map = HashMap::new();
 
-    for mesh in gltf.meshes() {
-        let mut vertices = Vec::new();
-        let mut indices = Vec::new();
-        let mut material = None;
-        for primitive in mesh.primitives() {
-            let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
-
-            let mut bone_ids: Vec<[u16; 4]> = Vec::new();
-            let mut bone_weights: Vec<[f32; 4]> = Vec::new();
-
-            // Extract Positions
-            let positions: Vec<[f32; 3]> = reader.read_positions()?.collect();
-
-            // Extract Normals
-            let normals: Vec<[f32; 3]> = reader.read_normals()?.collect();
-
-            // Extract Texture Coordinates
-            let tex_coords: Vec<[f32; 2]> = reader.read_tex_coords(0)?.into_f32().collect();
-
-            // Extract Bone Weights
-            if let Some(joints) = reader.read_joints(0) {
-                bone_ids = joints.into_u16().collect();
-            } else {
-                bone_ids.resize(positions.len(), [0, 0, 0, 0]);
-            }
-
-            if let Some(weights) = reader.read_weights(0) {
-                bone_weights = weights.into_f32().collect();
-            } else {
-                bone_weights.resize(positions.len(), [0.0, 0.0, 0.0, 0.0]);
-            }
-
-            let joint_ids: Vec<[i32; 4]> = bone_ids
-                .iter()
-                .map(|a| return [a[0] as i32, a[1] as i32, a[2] as i32, a[3] as i32])
-                .collect();
-
-            // Collect vertex data
-            for i in 0..positions.len() {
-                vertices.push(Vertex {
-                    position: (Vec3::from(positions[i]), 1.0).into(),
-                    normal: (Vec3::from(normals[i]), 1.0).into(),
-                    tex_coords: Vec2::from(tex_coords[i]),
-                    joint_ids: IVec4::from(joint_ids[i]),
-                    joints: Vec4::from(bone_weights[i]),
-                });
-            }
-
-            // Extract Indices
-            if let Some(indices_data) = reader.read_indices() {
-                indices.extend(indices_data.into_u32());
-            }
-
-            let mut mat_name = "Unknown".to_string();
-            // Extract Material Information
-            let mat = primitive.material();
-            {
-                if let Some(name) = mat.name() {
-                    mat_name = name.to_string();
-                }
-                let mut textures = HashMap::new();
-
-                if let Some(info) = mat.pbr_metallic_roughness().base_color_texture() {
-                    if let Some(name) = info.texture().name() {
-                        textures.insert(TextureType::Diffuse, name.to_string());
-                    }
-                }
-
-                if let Some(info) = mat.normal_texture() {
-                    if let Some(name) = info.texture().name() {
-                        textures.insert(TextureType::Normal, name.to_string());
-                    }
-                }
-
-                if let Some(info) = mat.occlusion_texture() {
-                    if let Some(name) = info.texture().name() {
-                        textures.insert(TextureType::Occlusion, name.to_string());
-                    }
-                }
-
-                if let Some(info) = mat.emissive_texture() {
-                    if let Some(name) = info.texture().name() {
-                        textures.insert(TextureType::Emissive, name.to_string());
-                    }
-                }
-
-                material = Some(Material {
-                    name: mat_name,
-                    textures,
-                });
+    for scene in gltf.scenes() {
+        for node in scene.nodes() {
+            for child in node.children() {
+                parent_map.insert(child.index(), node.index());
             }
         }
+    }
 
-        meshes.push(Mesh {
-            name: mesh.name().unwrap_or("None").to_string(),
-            vertices,
-            indices,
-            material: material.unwrap(),
-        });
+    parent_map
+}
+
+fn compute_node_transform(node: &gltf::Node) -> Mat4 {
+    let transform = node.transform();
+    match transform {
+        gltf::scene::Transform::Matrix { matrix } => {
+            Mat4::from_cols_array_2d(&matrix) // Directly use provided matrix
+        }
+        gltf::scene::Transform::Decomposed {
+            translation,
+            rotation,
+            scale,
+        } => {
+            let translation_matrix = Mat4::from_translation(Vec3::from(translation));
+            let rotation_matrix = Mat4::from_quat(Quat::from_array(rotation));
+            let scale_matrix = Mat4::from_scale(Vec3::from(scale));
+
+            translation_matrix * rotation_matrix * scale_matrix
+        }
+    }
+}
+
+fn compute_global_transform(
+    node: &gltf::Node,
+    parent_map: &HashMap<usize, usize>,
+    gltf: &gltf::Document,
+) -> Mat4 {
+    let mut transform = compute_node_transform(node);
+    let mut current = node.index();
+
+    // Walk up the hierarchy using the parent map
+    while let Some(&parent_index) = parent_map.get(&current) {
+        if let Some(parent_node) = gltf.nodes().nth(parent_index) {
+            transform = compute_node_transform(&parent_node) * transform;
+            current = parent_index;
+        } else {
+            break;
+        }
+    }
+
+    transform
+}
+
+fn transform_vertex(position: [f32; 3], transform: &Mat4) -> [f32; 3] {
+    let pos_vec = *transform * Vec4::new(position[0], position[1], position[2], 1.0);
+    [pos_vec.x, pos_vec.y, pos_vec.z]
+}
+
+fn load_gltf_model(path: &str, db: &mut Database) -> Option<Model> {
+    info!("Loading Model {}", path);
+    let (gltf, buffers, images) = gltf::import(path).expect("Failed to load glTF file");
+    let mut meshes = Vec::new();
+
+    let mut mesh_name = String::new();
+    let parent_map = build_parent_map(&gltf);
+    for node in gltf.nodes() {
+        let global_transform = compute_node_transform(&node);
+        if let Some(mesh) = node.mesh() {
+            let global_transform = compute_global_transform(&node, &parent_map, &gltf);
+            mesh_name = mesh.name().unwrap_or("[UNKNOWN]").to_string();
+            info!("Loading Mesh {}", mesh_name);
+            let mut vertices = Vec::new();
+            let mut indices = Vec::new();
+            let mut material = None;
+            for primitive in mesh.primitives() {
+                let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
+
+                let mut bone_ids: Vec<[u16; 4]> = Vec::new();
+                let mut bone_weights: Vec<[f32; 4]> = Vec::new();
+
+                // Extract Positions
+                let positions: Vec<[f32; 3]> = reader
+                    .read_positions()?
+                    .map(|pos| transform_vertex(pos, &global_transform))
+                    .collect();
+
+                // Extract Normals
+                let normals: Vec<[f32; 3]> = reader.read_normals()?.collect();
+
+                // Extract Texture Coordinates
+                let tex_coords: Vec<[f32; 2]> = reader.read_tex_coords(0)?.into_f32().collect();
+
+                let colors: Vec<[f32; 4]> = if let Some(colors) = reader.read_colors(0) {
+                    colors.into_rgba_f32().collect()
+                } else {
+                    let f = [1.0, 0.0, 1.0, 1.0];
+                    vec![f; tex_coords.len()]
+                };
+
+                // Extract Bone Weights
+                if let Some(joints) = reader.read_joints(0) {
+                    bone_ids = joints.into_u16().collect();
+                } else {
+                    bone_ids.resize(positions.len(), [0, 0, 0, 0]);
+                }
+
+                if let Some(weights) = reader.read_weights(0) {
+                    bone_weights = weights.into_f32().collect();
+                } else {
+                    bone_weights.resize(positions.len(), [0.0, 0.0, 0.0, 0.0]);
+                }
+
+                let joint_ids: Vec<[i32; 4]> = bone_ids
+                    .iter()
+                    .map(|a| return [a[0] as i32, a[1] as i32, a[2] as i32, a[3] as i32])
+                    .collect();
+
+                // Collect vertex data
+                for i in 0..positions.len() {
+                    vertices.push(Vertex {
+                        position: (Vec3::from(positions[i]), 1.0).into(),
+                        normal: (Vec3::from(normals[i]), 1.0).into(),
+                        color: (Vec4::from(colors[i])),
+                        tex_coords: Vec2::from(tex_coords[i]),
+                        joint_ids: IVec4::from(joint_ids[i]),
+                        joints: Vec4::from(bone_weights[i]),
+                    });
+                }
+
+                // Extract Indices
+                if let Some(indices_data) = reader.read_indices() {
+                    indices.extend(indices_data.into_u32());
+                }
+
+                let mut mat_name = "Unknown".to_string();
+                // Extract Material Information
+                let mat = primitive.material();
+                {
+                    if let Some(name) = mat.name() {
+                        mat_name = name.to_string();
+                    }
+                    let mut textures = HashMap::new();
+
+                    if let Some(info) = mat.pbr_metallic_roughness().base_color_texture() {
+                        let tex_name = format!("{}.{}", mesh_name, "BASE_COLOR");
+                        match info.texture().source().source() {
+                            gltf::image::Source::View { view, mime_type } => {
+                                let buffer = &buffers[view.buffer().index()];
+                                let start = view.offset();
+                                let end = start + view.length();
+                                let img_bytes = &buffer[start..end];
+
+                                db.register_texture_from_bytes(&tex_name, &img_bytes);
+                            }
+                            gltf::image::Source::Uri { uri, mime_type } => {
+                                if uri.starts_with("data:") {
+                                    if let Some((_, base64_data)) = uri.split_once(";base64,") {
+                                        let data = base64::decode(base64_data).unwrap();
+                                        db.register_texture_from_bytes(&tex_name, &data);
+                                    }
+                                } else {
+                                    info.texture().source().source();
+                                    let path = format!("{}/{}", db.base_path(), uri);
+                                    let data = std::fs::read(path).unwrap();
+                                    db.register_texture_from_bytes(&tex_name, &data);
+                                }
+                            }
+                        }
+
+                        //                    textures.insert(TextureType::Diffuse, tex_name);
+                    }
+
+                    if let Some(info) = mat.normal_texture() {
+                        let tex_name = format!("{}.{}", mesh_name, "NORMAL");
+                        match info.texture().source().source() {
+                            gltf::image::Source::View { view, mime_type } => {
+                                let buffer = &buffers[view.buffer().index()];
+                                let start = view.offset();
+                                let end = start + view.length();
+                                let img_bytes = &buffer[start..end];
+
+                                db.register_texture_from_bytes(&tex_name, &img_bytes);
+                            }
+                            gltf::image::Source::Uri { uri, mime_type } => {
+                                if uri.starts_with("data:") {
+                                    if let Some((_, base64_data)) = uri.split_once(";base64,") {
+                                        let data = base64::decode(base64_data).unwrap();
+                                        db.register_texture_from_bytes(&tex_name, &data);
+                                    }
+                                } else {
+                                    info.texture().source().source();
+                                    let path = format!("{}/{}", db.base_path(), uri);
+                                    let data = std::fs::read(path).unwrap();
+                                    db.register_texture_from_bytes(&tex_name, &data);
+                                }
+                            }
+                        }
+
+                        textures.insert(TextureType::Normal, tex_name);
+                    }
+
+                    if let Some(info) = mat.occlusion_texture() {
+                        if let Some(name) = info.texture().name() {
+                            info!("Occlsion texture {} found", name);
+                            textures.insert(TextureType::Occlusion, name.to_string());
+                        }
+                    }
+
+                    if let Some(info) = mat.emissive_texture() {
+                        let tex_name = format!("{}.{}", mesh_name, "EMISSIVE");
+                        match info.texture().source().source() {
+                            gltf::image::Source::View { view, mime_type } => {
+                                let buffer = &buffers[view.buffer().index()];
+                                let start = view.offset();
+                                let end = start + view.length();
+                                let img_bytes = &buffer[start..end];
+
+                                db.register_texture_from_bytes(&tex_name, &img_bytes);
+                            }
+                            gltf::image::Source::Uri { uri, mime_type } => {
+                                if uri.starts_with("data:") {
+                                    if let Some((_, base64_data)) = uri.split_once(";base64,") {
+                                        let data = base64::decode(base64_data).unwrap();
+                                        db.register_texture_from_bytes(&tex_name, &data);
+                                    }
+                                } else {
+                                    info.texture().source().source();
+                                    let path = format!("{}/{}", db.base_path(), uri);
+                                    let data = std::fs::read(path).unwrap();
+                                    db.register_texture_from_bytes(&tex_name, &data);
+                                }
+                            }
+                        }
+                        textures.insert(TextureType::Emissive, tex_name);
+                    }
+
+                    material = Some(Material {
+                        name: mat_name,
+                        textures,
+                    });
+                }
+            }
+
+            meshes.push(Mesh {
+                name: mesh.name().unwrap_or("None").to_string(),
+                vertices,
+                indices,
+                material: material.unwrap(),
+            });
+        }
     }
 
     Some(Model { meshes })

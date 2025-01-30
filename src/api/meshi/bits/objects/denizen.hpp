@@ -1,12 +1,21 @@
+#pragma once
 #include <algorithm>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <meshi/bits/base.hpp>
+#include <meshi/bits/objects/actor.hpp>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
 namespace meshi {
+
+struct PhysicsEntry {
+  glm::vec3 pos;
+  glm::vec3 scale;
+  glm::vec3 rotation;
+  
+};
+
 class Denizen : public Actor {
 public:
   Denizen() = default;

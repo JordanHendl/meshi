@@ -1,10 +1,9 @@
 #pragma once
-#include "meshi/meshi_c_api.h"
+#include <meshi/bits/event.hpp>
 #include <algorithm>
 #include <functional>
 #include <glm/glm.hpp>
 #include <memory>
-#include <meshi/bits/event.hpp>
 #include <string>
 #include <unordered_map>
 #include <vector>

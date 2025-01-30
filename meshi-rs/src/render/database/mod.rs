@@ -48,10 +48,10 @@ impl Database {
         let json_data = fs::read_to_string(format!("{}/db.json", base_path))?;
         let info: json::Database = serde_json::from_str(&json_data)?;
 
-        let images_cfg = load_db_images(&info);
+        let images_cfg = load_db_images(base_path, &info);
         let fonts_cfg = load_db_ttfs(&info);
-        let geometry_cfg = load_db_geometries(&info);
-        let material_cfg = load_db_materials(&info);
+        let geometry_cfg = load_db_geometries(base_path, &info);
+        let material_cfg = load_db_materials(base_path, &info);
 
         let images = match images_cfg {
             Some(cfg) => cfg.into(),
@@ -73,20 +73,20 @@ impl Database {
             None => HashMap::default(),
         };
 
-//        geometry.insert(
-//            "MESHI_TRIANGLE".to_string(),
-//            GeometryResource {
-//                cfg: json::GeometryEntry {
-//                    name: "MESHI".to_string(),
-//                    path: "".to_string(),
-//                },
-//                loaded: Some(geometry_primitives::make_triangle(
-//                    &Default::default(),
-//                    ctx,
-//                    scene,
-//                )),
-//            },
-//        );
+        geometry.insert(
+            "MESHI_TRIANGLE".to_string(),
+            GeometryResource {
+                cfg: json::GeometryEntry {
+                    name: "MESHI".to_string(),
+                    path: "".to_string(),
+                },
+                loaded: Some(geometry_primitives::make_triangle(
+                    &Default::default(),
+                    ctx,
+                    scene,
+                )),
+            },
+        );
 
         geometry.insert(
             "MESHI_CUBE".to_string(),
@@ -103,20 +103,20 @@ impl Database {
             },
         );
 
-//        geometry.insert(
-//            "MESHI_SPHERE".to_string(),
-//            GeometryResource {
-//                cfg: json::GeometryEntry {
-//                    name: "MESHI".to_string(),
-//                    path: "".to_string(),
-//                },
-//                loaded: Some(geometry_primitives::make_sphere(
-//                    &Default::default(),
-//                    ctx,
-//                    scene,
-//                )),
-//            },
-//        );
+        geometry.insert(
+            "MESHI_SPHERE".to_string(),
+            GeometryResource {
+                cfg: json::GeometryEntry {
+                    name: "MESHI".to_string(),
+                    path: "".to_string(),
+                },
+                loaded: Some(geometry_primitives::make_sphere(
+                    &Default::default(),
+                    ctx,
+                    scene,
+                )),
+            },
+        );
 
         let default_texture = ImageResource::load_default_image(ctx, scene);
 
@@ -147,16 +147,20 @@ impl Database {
 
         // Models HAVE to be loaded before materials, as they add materials.
         for (name, mut model) in geometry {
+            info!("Attempting to load model {}...", model.cfg.name);
             if model.loaded.is_none() {
                 model.load(base_path, ctx, scene, unsafe { &mut *ptr });
             }
 
             if let Some(m) = model.loaded {
+                info!("Success!");
                 for mesh in m.meshes {
                     info!("Making mesh {}.{} available", model.cfg.name, mesh.name);
                     db.geometry
                         .insert(format!("{}.{}", model.cfg.name, mesh.name), mesh.m);
                 }
+            } else {
+                info!("Failed!");
             }
         }
 
@@ -175,6 +179,39 @@ impl Database {
         if self.materials.get(name).is_none() {
             self.materials.insert(name.to_string(), mat);
         }
+    }
+
+    pub(crate) fn register_texture_from_bytes(&mut self, name: &str, data: &[u8]) {
+        info!(
+            "Registering embedded GLTF model texture from bytes {}..",
+            name
+        );
+        let image = unsafe {
+            ImageResource::load_from_uri(name, data, &mut *self.ctx, &mut *self.scene)
+        };
+        self.images.insert(
+            name.to_string(),
+            ImageResource {
+                cfg: json::ImageEntry {
+                    name: name.to_string(),
+                    path: Default::default(),
+                },
+                loaded: Some(image),
+            },
+        );
+    }
+
+    pub(crate) fn register_loaded_texture(&mut self, name: &str, data: &gltf::image::Data) {
+        info!("Registering embedded GLTF model texture {}..", name);
+        let image =
+            unsafe { ImageResource::load_from_gltf(name, data, &mut *self.ctx, &mut *self.scene) };
+        self.images.insert(
+            name.to_string(),
+            ImageResource {
+                cfg: Default::default(),
+                loaded: Some(image),
+            },
+        );
     }
 
     pub fn fetch_texture(&mut self, name: &str) -> Result<Handle<miso::Texture>, Error> {
@@ -213,9 +250,8 @@ impl Database {
             return Ok(*thing);
         }
 
-        return Err(Error::LookupError(LookupError {
-            entry: name.to_string(),
-        }));
+        info!("Unable to fetch model {}. Returning default sphere", name);
+        return Ok(*self.geometry.get_mut("MESHI.SPHERE").unwrap());
     }
 }
 

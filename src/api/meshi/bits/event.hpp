@@ -1,5 +1,5 @@
 #pragma once
-#include "meshi/meshi_c_api.h"
+#include "meshi/backend.hpp"
 #include <algorithm>
 #include <functional>
 #include <glm/glm.hpp>
@@ -210,8 +210,7 @@ public:
   // Constructor to initialize the event handler with the Meshi engine
   explicit EventHandler(EngineBackend *engine) : engine_(engine) {
     // Register the global callback function to the engine
-    meshi_register_event_callback(
-        engine_,
+    engine->register_event_callback(
         this, // Pass the instance as user_data
         [](Event &event, void *user_data) {
           static_cast<EventHandler *>(user_data)->process_event(event);

@@ -1,10 +1,9 @@
 #pragma once
-#include <meshi/bits/base.hpp>
+#include <meshi/bits/objects/base.hpp>
+#include <meshi/bits/objects/actor.hpp>
 #include <meshi/bits/error.hpp>
-#include <meshi/meshi_c_api.h>
 namespace meshi {
 struct WorldInfo {
-  EngineBackend *backend = nullptr;
 };
 
 struct SpawnInfo {};
@@ -26,8 +25,6 @@ public:
       if (actor->active()) {
         actor->update(dt);
       }
-
-
     }
   }
 

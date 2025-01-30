@@ -86,6 +86,106 @@ impl ImageResource {
         });
     }
 
+    pub fn load_from_uri(
+        name: &str,
+        bytes: &[u8],
+        ctx: &mut Context,
+        scene: &mut MisoScene,
+    ) -> Handle<miso::Texture> {
+        let img = image::load_from_memory(bytes).unwrap();
+        // Convert the image to RGBA8 format
+        let rgba_image = img.to_rgba8();
+
+        let (width, height) = rgba_image.dimensions();
+        let bytes = rgba_image.into_raw();
+        assert!((width * height * 4) as usize == bytes.len());
+
+        let img = ctx
+            .make_image(&ImageInfo {
+                debug_name: name,
+                dim: [width, height, 1],
+                layers: 1,
+                format: dashi::Format::RGBA8,
+                mip_levels: 1,
+                initial_data: Some(&bytes),
+            })
+            .unwrap();
+
+        let view = ctx
+            .make_image_view(&ImageViewInfo {
+                debug_name: name,
+                img,
+                ..Default::default()
+            })
+            .unwrap();
+
+        let sampler = ctx
+            .make_sampler(&SamplerInfo {
+                ..Default::default()
+            })
+            .unwrap();
+
+        info!("Registering URI texture {}..", name);
+        return scene.register_texture(&TextureInfo {
+            image: img,
+            view,
+            sampler,
+            dim: [width, height],
+        });
+    }
+
+    pub fn load_from_gltf(
+        name: &str,
+        data: &gltf::image::Data,
+        ctx: &mut Context,
+        scene: &mut MisoScene,
+    ) -> Handle<miso::Texture> {
+        // Define the size of the image
+
+        let width = data.width;
+        let height = data.height;
+        let bytes = &data.pixels;
+        let format = match data.format {
+            gltf::image::Format::R8 => dashi::Format::R8Sint,
+            gltf::image::Format::R8G8B8A8 => dashi::Format::RGBA8,
+            gltf::image::Format::R32G32B32A32FLOAT => dashi::Format::RGBA32F,
+            _ => todo!(),
+        };
+
+        let img = ctx
+            .make_image(&ImageInfo {
+                debug_name: name,
+                dim: [width, height, 1],
+                layers: 1,
+                format,
+                mip_levels: 1,
+                initial_data: Some(&bytes),
+            })
+            .unwrap();
+
+        let view = ctx
+            .make_image_view(&ImageViewInfo {
+                debug_name: name,
+                img,
+                ..Default::default()
+            })
+            .unwrap();
+
+        let sampler = ctx
+            .make_sampler(&SamplerInfo {
+                ..Default::default()
+            })
+            .unwrap();
+
+        info!("Registering embedded GLTF model texture {}..", name);
+        return scene.register_texture(&TextureInfo {
+            image: img,
+            view,
+            sampler,
+            dim: [width, height],
+        });
+    }
+
     pub fn load_rgba8(&mut self, base_path: &str, ctx: &mut Context, scene: &mut MisoScene) {
         let path = &format!("{}/{}", base_path, self.cfg.path.as_str());
         let img = image::open(&path).unwrap_or_default();
@@ -156,15 +256,21 @@ impl From<json::Image> for HashMap<String, ImageResource> {
     }
 }
 
-pub fn load_db_images(cfg: &json::Database) -> Option<json::Image> {
+pub fn load_db_images(base_path: &str, cfg: &json::Database) -> Option<json::Image> {
     match &cfg.images {
-        Some(path) => match fs::read_to_string(path) {
-            Ok(json_data) => {
-                let info: json::Image = serde_json::from_str(&json_data).unwrap();
-                return Some(info);
+        Some(path) => {
+            let rpath = format!("{}/{}", base_path, path);
+            let path = &path;
+            info!("Found image path {}", path);
+            match fs::read_to_string(path) {
+                Ok(json_data) => {
+                    info!("Loaded image database registry {}!", path);
+                    let info: json::Image = serde_json::from_str(&json_data).unwrap();
+                    return Some(info);
+                }
+                Err(_) => return None,
             }
-            Err(_) => return None,
-        },
+        }
         None => return None,
     };
 }

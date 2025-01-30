@@ -22,65 +22,73 @@ pub fn make_cube(
 ) -> ModelResource {
     let size = info.size;
 
-    // Cube vertices
+    // Cube vertices with corrected texture coordinates
     let cvertices: [miso::Vertex; 8] = [
         // Front face
         miso::Vertex {
             position: Vec4::new(-size, -size, size, 1.0),
             normal: Vec4::new(0.0, 0.0, 1.0, 0.0),
-            tex_coords: Vec2::new(0.0, 0.0),
+            tex_coords: Vec2::new(0.0, 1.0),
             joint_ids: IVec4::new(0, 0, 0, 0),
             joints: Vec4::new(0.0, 0.0, 0.0, 0.0),
+            color: Default::default(),
         },
         miso::Vertex {
             position: Vec4::new(size, -size, size, 1.0),
             normal: Vec4::new(0.0, 0.0, 1.0, 0.0),
-            tex_coords: Vec2::new(1.0, 0.0),
+            tex_coords: Vec2::new(1.0, 1.0),
             joint_ids: IVec4::new(0, 0, 0, 0),
             joints: Vec4::new(0.0, 0.0, 0.0, 0.0),
+            color: Default::default(),
         },
         miso::Vertex {
             position: Vec4::new(size, size, size, 1.0),
             normal: Vec4::new(0.0, 0.0, 1.0, 0.0),
-            tex_coords: Vec2::new(1.0, 1.0),
+            tex_coords: Vec2::new(1.0, 0.0),
             joint_ids: IVec4::new(0, 0, 0, 0),
             joints: Vec4::new(0.0, 0.0, 0.0, 0.0),
+            color: Default::default(),
         },
         miso::Vertex {
             position: Vec4::new(-size, size, size, 1.0),
             normal: Vec4::new(0.0, 0.0, 1.0, 0.0),
-            tex_coords: Vec2::new(0.0, 1.0),
+            tex_coords: Vec2::new(0.0, 0.0),
             joint_ids: IVec4::new(0, 0, 0, 0),
             joints: Vec4::new(0.0, 0.0, 0.0, 0.0),
+            color: Default::default(),
         },
         // Back face
         miso::Vertex {
             position: Vec4::new(-size, -size, -size, 1.0),
             normal: Vec4::new(0.0, 0.0, -1.0, 0.0),
-            tex_coords: Vec2::new(0.0, 0.0),
+            tex_coords: Vec2::new(1.0, 1.0),
             joint_ids: IVec4::new(0, 0, 0, 0),
             joints: Vec4::new(0.0, 0.0, 0.0, 0.0),
+            color: Default::default(),
         },
         miso::Vertex {
             position: Vec4::new(size, -size, -size, 1.0),
             normal: Vec4::new(0.0, 0.0, -1.0, 0.0),
-            tex_coords: Vec2::new(1.0, 0.0),
+            tex_coords: Vec2::new(0.0, 1.0),
             joint_ids: IVec4::new(0, 0, 0, 0),
             joints: Vec4::new(0.0, 0.0, 0.0, 0.0),
+            color: Default::default(),
         },
         miso::Vertex {
             position: Vec4::new(size, size, -size, 1.0),
             normal: Vec4::new(0.0, 0.0, -1.0, 0.0),
-            tex_coords: Vec2::new(1.0, 1.0),
+            tex_coords: Vec2::new(0.0, 0.0),
             joint_ids: IVec4::new(0, 0, 0, 0),
             joints: Vec4::new(0.0, 0.0, 0.0, 0.0),
+            color: Default::default(),
         },
         miso::Vertex {
             position: Vec4::new(-size, size, -size, 1.0),
             normal: Vec4::new(0.0, 0.0, -1.0, 0.0),
-            tex_coords: Vec2::new(0.0, 1.0),
+            tex_coords: Vec2::new(1.0, 0.0),
             joint_ids: IVec4::new(0, 0, 0, 0),
             joints: Vec4::new(0.0, 0.0, 0.0, 0.0),
+            color: Default::default(),
         },
     ];
 
@@ -114,7 +122,7 @@ pub fn make_cube(
             initial_data: Some(unsafe { INDICES.as_slice().align_to::<u8>().1 }),
         })
         .unwrap();
-    
+
     info!("Registering Default Cube Mesh..");
     let m = scene.register_mesh(&MeshInfo {
         name: "Cube".to_string(),
@@ -158,6 +166,7 @@ pub fn make_triangle(
             tex_coords: Vec2::new(0.5, 1.0),
             joint_ids: IVec4::new(0, 0, 0, 0),
             joints: Vec4::new(0.0, 0.0, 0.0, 0.0),
+            color: Default::default(),
         },
         miso::Vertex {
             position: Vec4::new(-size, -size, 0.0, 1.0), // Bottom-left vertex
@@ -165,6 +174,7 @@ pub fn make_triangle(
             tex_coords: Vec2::new(0.0, 0.0),
             joint_ids: IVec4::new(0, 0, 0, 0),
             joints: Vec4::new(0.0, 0.0, 0.0, 0.0),
+            color: Default::default(),
         },
         miso::Vertex {
             position: Vec4::new(size, -size, 0.0, 1.0), // Bottom-right vertex
@@ -172,6 +182,7 @@ pub fn make_triangle(
             tex_coords: Vec2::new(1.0, 0.0),
             joint_ids: IVec4::new(0, 0, 0, 0),
             joints: Vec4::new(0.0, 0.0, 0.0, 0.0),
+            color: Default::default(),
         },
     ];
 
@@ -264,6 +275,7 @@ pub fn make_sphere(
                 tex_coords: Vec2::new(segment as f32 / segments as f32, ring as f32 / rings as f32),
                 joint_ids: IVec4::new(0, 0, 0, 0),
                 joints: Vec4::new(0.0, 0.0, 0.0, 0.0),
+                color: Default::default(),
             });
 
             if ring < rings && segment < segments {
@@ -318,4 +330,3 @@ pub fn make_sphere(
         }],
     }
 }
-

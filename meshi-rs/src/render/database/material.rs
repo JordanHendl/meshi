@@ -1,4 +1,6 @@
 use dashi::utils::Handle;
+use tracing::{info, Level};
+
 use dashi::Context;
 use miso::{MaterialInfo, MisoScene};
 
@@ -58,15 +60,22 @@ impl From<json::Materials> for HashMap<String, MaterialResource> {
     }
 }
 
-pub fn load_db_materials(cfg: &json::Database) -> Option<json::Materials> {
+pub fn load_db_materials(base_path: &str, cfg: &json::Database) -> Option<json::Materials> {
     match &cfg.materials {
-        Some(path) => match fs::read_to_string(path) {
-            Ok(json_data) => {
-                let info: json::Materials = serde_json::from_str(&json_data).unwrap();
-                return Some(info);
+        Some(path) => {
+            let rpath = format!("{}/{}", base_path, path);
+            let path = &path;
+            info!("Found materials path {}", path);
+            match fs::read_to_string(path) {
+                Ok(json_data) => {
+                    info!("Loaded materials database registry {}!", path);
+                    let info: json::Materials = serde_json::from_str(&json_data).unwrap();
+                    return Some(info);
+                }
+                Err(_) => return None,
             }
-            Err(_) => return None,
-        },
+        }
         None => return None,
     };
 }
+
