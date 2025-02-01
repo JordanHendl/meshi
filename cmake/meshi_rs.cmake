@@ -1,12 +1,20 @@
 set(MESHI_RS_PROJECT_DIR ${CMAKE_SOURCE_DIR}/meshi-rs)
 
+if(${CMAKE_BUILD_TYPE} STREQUAL "Release")
+add_custom_target(cargo_build ALL
+    COMMAND cargo build --release
+    WORKING_DIRECTORY ${MESHI_RS_PROJECT_DIR}
+    COMMENT "Building Rust project with cargo"
+    USES_TERMINAL
+)
+else()
 add_custom_target(cargo_build ALL
     COMMAND cargo build
     WORKING_DIRECTORY ${MESHI_RS_PROJECT_DIR}
     COMMENT "Building Rust project with cargo"
     USES_TERMINAL
 )
-
+endif()
 add_custom_target(copy_meshi_library
     COMMENT "This target depends on cargo_build"
     DEPENDS cargo_build meshi-rs-cpy

@@ -1,6 +1,5 @@
 use dashi::utils::Handle;
 use tracing::{info, Level};
-
 use dashi::Context;
 use miso::{MaterialInfo, MisoScene};
 
@@ -34,6 +33,7 @@ impl MaterialResource {
                 passes: self.cfg.passes.clone(),
                 base_color,
                 normal,
+                ..Default::default()
             }));
         }
     }

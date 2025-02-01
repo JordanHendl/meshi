@@ -1,4 +1,4 @@
-use crate::render::database::Database;
+use crate::render::database::{geometry::MeshResource, Database};
 use dashi::utils::Handle;
 use glam::Mat4;
 use tracing::{info, Level};
@@ -44,16 +44,26 @@ impl MeshObjectInfo {
             self.mesh, self.material
         );
         if let Ok(mesh) = db.fetch_mesh(self.mesh) {
-            if let Ok(material) = db.fetch_material(self.material) {
-                return MeshObject {
-                    handle: scene.register_object(&miso::ObjectInfo {
-                        mesh,
-                        material,
-                        transform: self.transform,
-                    }),
-                    transform: self.transform,
+            let mut targets = Vec::new();
+            for m in &mesh.submeshes {
+                assert!(m.m.valid());
+                let mat = if m.mat.valid() {
+                    m.mat
+                } else {
+                    db.fetch_material("DEFAULT").unwrap()
                 };
+                targets.push(scene.register_object(&miso::ObjectInfo {
+                    mesh: m.m,
+                    material: mat,
+                    transform: self.transform,
+                }));
             }
+
+            return MeshObject {
+                targets,
+                mesh,
+                transform: self.transform,
+            };
         }
 
         Default::default()
@@ -62,6 +72,7 @@ impl MeshObjectInfo {
 
 #[derive(Default)]
 pub struct MeshObject {
-    pub handle: Handle<miso::Renderable>,
+    pub targets: Vec<Handle<miso::Renderable>>,
+    pub mesh: MeshResource,
     pub transform: Mat4,
 }

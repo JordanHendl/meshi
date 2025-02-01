@@ -3,7 +3,7 @@ use glam::{IVec4, Mat4, Quat, Vec2, Vec3, Vec4};
 use gltf::Gltf;
 use miso::{MisoScene, Vertex};
 use serde::{Deserialize, Serialize};
-use tracing::{info, Level};
+use tracing::{debug, info, Level};
 use tracing_subscriber::FmtSubscriber;
 
 use super::{json, Database, ImageResource};
@@ -21,10 +21,15 @@ pub struct GeometryInfo {
 }
 
 #[derive(Default, Clone)]
-pub struct MeshResource {
-    pub name: String,
+pub struct SubmeshResource {
     pub m: Handle<miso::Mesh>,
     pub mat: Handle<miso::Material>,
+}
+
+#[derive(Default, Clone)]
+pub struct MeshResource {
+    pub name: String,
+    pub submeshes: Vec<SubmeshResource>,
 }
 
 #[derive(Default, Clone)]
@@ -49,78 +54,96 @@ impl GeometryResource {
         let mut meshes = Vec::new();
         if let Some(gltf) = load_gltf_model(&file, db) {
             for mesh in gltf.meshes {
-                let name = format!("{}.{}", self.cfg.name, mesh.name);
-                info!("Loading Mesh {}...", &name);
-                let vertices = ctx
-                    .make_buffer(&BufferInfo {
-                        debug_name: &format!("{} Vertices", name),
-                        byte_size: (std::mem::size_of::<miso::Vertex>() * mesh.vertices.len())
-                            as u32,
-                        visibility: dashi::MemoryVisibility::Gpu,
-                        usage: dashi::BufferUsage::VERTEX,
-                        initial_data: Some(unsafe { mesh.vertices.as_slice().align_to::<u8>().1 }),
-                    })
-                    .unwrap();
+                let mut submeshes = Vec::new();
+                for (idx, submesh) in mesh.sub_meshes.iter().enumerate() {
+                    let name = format!("{}.{}[{}]", self.cfg.name, mesh.name, idx);
+                    debug!("Loading Mesh {}...", &name);
+                    let vertices = ctx
+                        .make_buffer(&BufferInfo {
+                            debug_name: &format!("{} Vertices", name),
+                            byte_size: (std::mem::size_of::<miso::Vertex>()
+                                * submesh.vertices.len())
+                                as u32,
+                            visibility: dashi::MemoryVisibility::Gpu,
+                            usage: dashi::BufferUsage::VERTEX,
+                            initial_data: Some(unsafe {
+                                submesh.vertices.as_slice().align_to::<u8>().1
+                            }),
+                        })
+                        .unwrap();
 
-                let indices = ctx
-                    .make_buffer(&BufferInfo {
-                        debug_name: &format!("{} Indices", name),
-                        byte_size: (std::mem::size_of::<u32>() * mesh.indices.len()) as u32,
-                        visibility: dashi::MemoryVisibility::Gpu,
-                        usage: dashi::BufferUsage::INDEX,
-                        initial_data: Some(unsafe { mesh.indices.as_slice().align_to::<u8>().1 }),
-                    })
-                    .unwrap();
+                    let indices = ctx
+                        .make_buffer(&BufferInfo {
+                            debug_name: &format!("{} Indices", name),
+                            byte_size: (std::mem::size_of::<u32>() * submesh.indices.len()) as u32,
+                            visibility: dashi::MemoryVisibility::Gpu,
+                            usage: dashi::BufferUsage::INDEX,
+                            initial_data: Some(unsafe {
+                                submesh.indices.as_slice().align_to::<u8>().1
+                            }),
+                        })
+                        .unwrap();
 
-                let base_color = mesh
-                    .material
-                    .textures
-                    .get(&TextureType::Diffuse)
-                    .unwrap_or(&"[NOT FOUND]".to_string())
-                    .clone();
-                let normal = mesh
-                    .material
-                    .textures
-                    .get(&TextureType::Normal)
-                    .unwrap_or(&"[NOT FOUND]".to_string())
-                    .clone();
+                    let base_color = submesh
+                        .material
+                        .textures
+                        .get(&TextureType::Diffuse)
+                        .unwrap_or(&"[NOT FOUND]".to_string())
+                        .clone();
+                    let normal = submesh
+                        .material
+                        .textures
+                        .get(&TextureType::Normal)
+                        .unwrap_or(&"[NOT FOUND]".to_string())
+                        .clone();
+                    let emissive = submesh
+                        .material
+                        .textures
+                        .get(&TextureType::Emissive)
+                        .unwrap_or(&"[NOT FOUND]".to_string())
+                        .clone();
 
-                info!(
-                    "Attempting to load material {}.{} Textures:
+                    debug!(
+                        "Attempting to load material {}.{} Textures:
                       -- Base Color : {}
-                      -- Normal: {}",
-                    name, mesh.material.name, base_color, normal
-                );
+                      -- Normal: {},
+                      -- Emissive: {}",
+                        name, submesh.material.name, base_color, normal, emissive
+                    );
 
-                let mat_info = miso::MaterialInfo {
-                    name: mesh.material.name.clone(),
-                    passes: vec!["ALL".to_string()],
-                    base_color: db.fetch_texture(&base_color).unwrap_or_default(),
-                    normal: db.fetch_texture(&normal).unwrap_or_default(),
-                };
+                    let mat_info = miso::MaterialInfo {
+                        name: submesh.material.name.clone(),
+                        passes: vec!["ALL".to_string()],
+                        base_color: db.fetch_texture(&base_color).unwrap_or_default(),
+                        normal: db.fetch_texture(&normal).unwrap_or_default(),
+                        emissive: db.fetch_texture(&emissive).unwrap_or_default(),
+                        base_color_factor: submesh.material.base_color_factor,
+                        emissive_factor: submesh.material.emissive_factor,
+                    };
 
-                info!("Registering Mesh Material {}", &name);
-                let mat = scene.register_material(&mat_info);
-                db.insert_material(&name, mat);
+                    debug!("Registering Mesh Material {}", &name);
+                    let mat = scene.register_material(&mat_info);
+                    db.insert_material(&name, mat);
 
-                info!("Registering Mesh {}", &name);
-                let m = scene.register_mesh(&miso::MeshInfo {
-                    name: self.cfg.name.clone(),
-                    vertices,
-                    num_vertices: mesh.vertices.len(),
-                    indices,
-                    num_indices: mesh.indices.len(),
-                });
+                    debug!("Registering Mesh {}", &name);
+                    let m = scene.register_mesh(&miso::MeshInfo {
+                        name: self.cfg.name.clone(),
+                        vertices,
+                        num_vertices: submesh.vertices.len(),
+                        indices,
+                        num_indices: submesh.indices.len(),
+                    });
 
+                    submeshes.push(SubmeshResource { m, mat });
+                }
                 meshes.push(MeshResource {
                     name: mesh.name.clone(),
-                    m,
-                    mat,
+                    submeshes,
                 });
             }
             self.loaded = Some(ModelResource { meshes });
         } else {
-            info!("Failed to load!");
+            debug!("Failed to load {}!", self.cfg.name);
         }
     }
 
@@ -150,10 +173,10 @@ pub fn load_db_geometries(base_path: &str, cfg: &json::Database) -> Option<json:
     match &cfg.geometry {
         Some(path) => {
             let rpath = format!("{}/{}", base_path, path);
-            info!("Found geometry path {}", &rpath);
+            debug!("Found geometry path {}", &rpath);
             match fs::read_to_string(&rpath) {
                 Ok(json_data) => {
-                    info!("Loaded geometry database registry {}!", &rpath);
+                    debug!("Loaded geometry database registry {}!", &rpath);
                     let info: json::Geometry = serde_json::from_str(&json_data).unwrap();
                     return Some(info);
                 }
@@ -175,19 +198,26 @@ pub enum TextureType {
     Albedo,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 struct Material {
     pub name: String,
+    pub emissive_factor: Vec4,
+    pub base_color_factor: Vec4,
     pub textures: HashMap<TextureType, String>,
+}
+
+#[derive(Debug, Clone)]
+struct Submesh {
+    pub vertices: Vec<Vertex>,
+    pub indices: Vec<Index>,
+    pub material: Material,
 }
 
 type Index = u32;
 #[derive(Debug, Clone)]
 struct Mesh {
     pub name: String,
-    pub vertices: Vec<Vertex>,
-    pub indices: Vec<Index>,
-    pub material: Material,
+    pub sub_meshes: Vec<Submesh>,
 }
 
 #[derive(Debug, Clone)]
@@ -256,22 +286,23 @@ fn transform_vertex(position: [f32; 3], transform: &Mat4) -> [f32; 3] {
 }
 
 fn load_gltf_model(path: &str, db: &mut Database) -> Option<Model> {
-    info!("Loading Model {}", path);
+    debug!("Loading Model {}", path);
     let (gltf, buffers, images) = gltf::import(path).expect("Failed to load glTF file");
     let mut meshes = Vec::new();
-
     let mut mesh_name = String::new();
     let parent_map = build_parent_map(&gltf);
     for node in gltf.nodes() {
         let global_transform = compute_node_transform(&node);
         if let Some(mesh) = node.mesh() {
+            let mut submeshes = Vec::new();
             let global_transform = compute_global_transform(&node, &parent_map, &gltf);
             mesh_name = mesh.name().unwrap_or("[UNKNOWN]").to_string();
-            info!("Loading Mesh {}", mesh_name);
-            let mut vertices = Vec::new();
-            let mut indices = Vec::new();
-            let mut material = None;
+            debug!("Loading Mesh {}", mesh_name);
             for primitive in mesh.primitives() {
+                let mut vertices = Vec::new();
+                let mut indices = Vec::new();
+                let mut material = None;
+
                 let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
 
                 let mut bone_ids: Vec<[u16; 4]> = Vec::new();
@@ -292,7 +323,7 @@ fn load_gltf_model(path: &str, db: &mut Database) -> Option<Model> {
                 let colors: Vec<[f32; 4]> = if let Some(colors) = reader.read_colors(0) {
                     colors.into_rgba_f32().collect()
                 } else {
-                    let f = [1.0, 0.0, 1.0, 1.0];
+                    let f = [0.0, 0.0, 0.0, 1.0];
                     vec![f; tex_coords.len()]
                 };
 
@@ -338,113 +369,80 @@ fn load_gltf_model(path: &str, db: &mut Database) -> Option<Model> {
                     if let Some(name) = mat.name() {
                         mat_name = name.to_string();
                     }
+
                     let mut textures = HashMap::new();
 
+                    let mut process_texture_func = |tex: gltf::texture::Texture, name, kind| {
+                        let tex_name = format!("{}.{}[{}]", mesh_name, name, submeshes.len());
+                        match tex.source().source() {
+                            gltf::image::Source::View { view, mime_type } => {
+                                let buffer = &buffers[view.buffer().index()];
+                                let start = view.offset();
+                                let end = start + view.length();
+                                let img_bytes = &buffer[start..end];
+
+                                db.register_texture_from_bytes(&tex_name, &img_bytes);
+                            }
+                            gltf::image::Source::Uri { uri, mime_type } => {
+                                if uri.starts_with("data:") {
+                                    if let Some((_, base64_data)) = uri.split_once(";base64,") {
+                                        let data = base64::decode(base64_data).unwrap();
+                                        db.register_texture_from_bytes(&tex_name, &data);
+                                    }
+                                } else {
+                                    tex.source().source();
+                                    let path = format!("{}/{}", db.base_path(), uri);
+                                    let data = std::fs::read(path).unwrap();
+                                    db.register_texture_from_bytes(&tex_name, &data);
+                                }
+                            }
+                        }
+
+                        textures.insert(kind, tex_name);
+                    };
+
                     if let Some(info) = mat.pbr_metallic_roughness().base_color_texture() {
-                        let tex_name = format!("{}.{}", mesh_name, "BASE_COLOR");
-                        match info.texture().source().source() {
-                            gltf::image::Source::View { view, mime_type } => {
-                                let buffer = &buffers[view.buffer().index()];
-                                let start = view.offset();
-                                let end = start + view.length();
-                                let img_bytes = &buffer[start..end];
-
-                                db.register_texture_from_bytes(&tex_name, &img_bytes);
-                            }
-                            gltf::image::Source::Uri { uri, mime_type } => {
-                                if uri.starts_with("data:") {
-                                    if let Some((_, base64_data)) = uri.split_once(";base64,") {
-                                        let data = base64::decode(base64_data).unwrap();
-                                        db.register_texture_from_bytes(&tex_name, &data);
-                                    }
-                                } else {
-                                    info.texture().source().source();
-                                    let path = format!("{}/{}", db.base_path(), uri);
-                                    let data = std::fs::read(path).unwrap();
-                                    db.register_texture_from_bytes(&tex_name, &data);
-                                }
-                            }
-                        }
-
-                        //                    textures.insert(TextureType::Diffuse, tex_name);
-                    }
-
-                    if let Some(info) = mat.normal_texture() {
-                        let tex_name = format!("{}.{}", mesh_name, "NORMAL");
-                        match info.texture().source().source() {
-                            gltf::image::Source::View { view, mime_type } => {
-                                let buffer = &buffers[view.buffer().index()];
-                                let start = view.offset();
-                                let end = start + view.length();
-                                let img_bytes = &buffer[start..end];
-
-                                db.register_texture_from_bytes(&tex_name, &img_bytes);
-                            }
-                            gltf::image::Source::Uri { uri, mime_type } => {
-                                if uri.starts_with("data:") {
-                                    if let Some((_, base64_data)) = uri.split_once(";base64,") {
-                                        let data = base64::decode(base64_data).unwrap();
-                                        db.register_texture_from_bytes(&tex_name, &data);
-                                    }
-                                } else {
-                                    info.texture().source().source();
-                                    let path = format!("{}/{}", db.base_path(), uri);
-                                    let data = std::fs::read(path).unwrap();
-                                    db.register_texture_from_bytes(&tex_name, &data);
-                                }
-                            }
-                        }
-
-                        textures.insert(TextureType::Normal, tex_name);
-                    }
-
-                    if let Some(info) = mat.occlusion_texture() {
-                        if let Some(name) = info.texture().name() {
-                            info!("Occlsion texture {} found", name);
-                            textures.insert(TextureType::Occlusion, name.to_string());
-                        }
+                        process_texture_func(info.texture(), "BASE_COLOR", TextureType::Diffuse);
                     }
 
                     if let Some(info) = mat.emissive_texture() {
-                        let tex_name = format!("{}.{}", mesh_name, "EMISSIVE");
-                        match info.texture().source().source() {
-                            gltf::image::Source::View { view, mime_type } => {
-                                let buffer = &buffers[view.buffer().index()];
-                                let start = view.offset();
-                                let end = start + view.length();
-                                let img_bytes = &buffer[start..end];
-
-                                db.register_texture_from_bytes(&tex_name, &img_bytes);
-                            }
-                            gltf::image::Source::Uri { uri, mime_type } => {
-                                if uri.starts_with("data:") {
-                                    if let Some((_, base64_data)) = uri.split_once(";base64,") {
-                                        let data = base64::decode(base64_data).unwrap();
-                                        db.register_texture_from_bytes(&tex_name, &data);
-                                    }
-                                } else {
-                                    info.texture().source().source();
-                                    let path = format!("{}/{}", db.base_path(), uri);
-                                    let data = std::fs::read(path).unwrap();
-                                    db.register_texture_from_bytes(&tex_name, &data);
-                                }
-                            }
-                        }
-                        textures.insert(TextureType::Emissive, tex_name);
+                        process_texture_func(info.texture(), "EMISSIVE", TextureType::Emissive);
                     }
 
+                    if let Some(info) = mat.normal_texture() {
+                        process_texture_func(info.texture(), "NORMAL", TextureType::Normal);
+                    }
+
+                    if let Some(info) = mat.occlusion_texture() {
+                        process_texture_func(info.texture(), "OCCLUSION", TextureType::Occlusion);
+                    }
+
+                    debug!(
+                        "REGISTERING MATERIAL NAME : {}.{} with texture len [{}]",
+                        mesh_name,
+                        mat_name,
+                        textures.len()
+                    );
                     material = Some(Material {
                         name: mat_name,
                         textures,
+                        emissive_factor: Vec4::from((Vec3::from_array(mat.emissive_factor()), 1.0)),
+                        base_color_factor: Vec4::from_array(
+                            mat.pbr_metallic_roughness().base_color_factor(),
+                        ),
+                    });
+
+                    submeshes.push(Submesh {
+                        vertices,
+                        indices,
+                        material: material.unwrap(),
                     });
                 }
             }
 
             meshes.push(Mesh {
                 name: mesh.name().unwrap_or("None").to_string(),
-                vertices,
-                indices,
-                material: material.unwrap(),
+                sub_meshes: submeshes,
             });
         }
     }

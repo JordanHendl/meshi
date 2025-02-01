@@ -15,8 +15,6 @@ public:
     constexpr auto aspect = 16.0/9.0;
     constexpr auto near = 0.1;
     constexpr auto far = 200000.0;
-    //m_projection = glm::mat4(1.0);//glm::perspective(fov, aspect, near, far);
-    //m_projection = glm::perspective(fov, aspect, near, far);
     m_projection = glm::perspective(glm::radians(fov), aspect, near, far);
   };
   virtual ~CameraComponent() {

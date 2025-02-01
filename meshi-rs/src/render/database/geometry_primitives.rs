@@ -1,5 +1,5 @@
 use super::ModelResource;
-use crate::render::database::MeshResource;
+use crate::render::database::{MeshResource, SubmeshResource};
 use dashi::*;
 use glam::*;
 use miso::MeshInfo;
@@ -135,8 +135,10 @@ pub fn make_cube(
     return ModelResource {
         meshes: vec![MeshResource {
             name: "CUBE".to_string(),
-            m,
-            mat: Default::default(),
+            submeshes: vec![SubmeshResource {
+                m,
+                mat: Default::default(),
+            }],
         }],
     };
 }
@@ -223,8 +225,10 @@ pub fn make_triangle(
     return ModelResource {
         meshes: vec![MeshResource {
             name: "TRIANGLE".to_string(),
-            m,
-            mat: Default::default(),
+            submeshes: vec![SubmeshResource {
+                m,
+                mat: Default::default(),
+            }],
         }],
     };
 }
@@ -325,8 +329,10 @@ pub fn make_sphere(
     ModelResource {
         meshes: vec![MeshResource {
             name: "SPHERE".to_string(),
-            m: mesh,
-            mat: Default::default(),
+            submeshes: vec![SubmeshResource {
+                m: mesh,
+                mat: Default::default(),
+            }],
         }],
     }
 }

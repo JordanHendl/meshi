@@ -1,0 +1,6 @@
+{
+  "geometry": [{
+      "name": "witch",
+      "path": "/geometry/witch.glb"
+  }]
+}

@@ -28,11 +28,14 @@ public:
   };
 
   inline auto world() -> World & { return m_world; }
+  inline auto delta_time() -> float {
+    return m_dt;
+  }
 
   inline auto update() -> void {
     apply_camera();
-    auto dt = m_backend.update();
-    m_world.update(dt);
+    m_dt = m_backend.update();
+    m_world.update(m_dt);
   }
 
   inline auto event() -> EventHandler & { return *m_event; }
@@ -55,9 +58,10 @@ private:
         m_action(std::make_shared<ActionHandler>(*m_event)){};
 
   EngineBackend m_backend;
-  World m_world;
   std::shared_ptr<EventHandler> m_event;
   std::shared_ptr<ActionHandler> m_action;
+  float m_dt = 0.0f;
+  World m_world;
 };
 
 namespace detail {

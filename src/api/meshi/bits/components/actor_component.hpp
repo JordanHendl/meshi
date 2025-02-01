@@ -28,12 +28,16 @@ public:
   }
 
   inline auto set_transform(glm::mat4 &transform) -> void {
+    m_right = glm::vec3(transform[0]);
+    m_up = glm::vec3(transform[1]);   
+    m_front = glm::vec3(transform[2]);
     m_transform = transform;
   }
 
 private:
   friend class Actor;
-  glm::mat4 m_transform = glm::mat4(1.0);;
+  glm::mat4 m_transform = glm::mat4(1.0);
+  ;
   glm::vec3 m_front = {0.0, 0.0, 1.0};
   glm::vec3 m_right = {1.0, 0.0, 0.0};
   glm::vec3 m_up = {0.0, 1.0, 0.0};

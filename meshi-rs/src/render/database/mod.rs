@@ -1,7 +1,7 @@
 pub mod error;
 use dashi::utils::Handle;
 use miso::MaterialInfo;
-use tracing::{info, Level};
+use tracing::{debug, info, Level};
 use tracing_subscriber::FmtSubscriber;
 
 pub use error::*;
@@ -12,7 +12,7 @@ mod images;
 use images::*;
 mod material;
 use material::*;
-mod geometry;
+pub mod geometry;
 use geometry::*;
 pub mod font;
 mod geometry_primitives;
@@ -27,7 +27,7 @@ pub struct Database {
     ctx: *mut dashi::Context,
     scene: *mut miso::MisoScene,
     base_path: String,
-    geometry: HashMap<String, Handle<miso::Mesh>>,
+    geometry: HashMap<String, MeshResource>,
     images: HashMap<String, ImageResource>,
     materials: HashMap<String, Handle<miso::Material>>,
     fonts: HashMap<String, FontResource>,
@@ -127,6 +127,7 @@ impl Database {
             passes: vec!["non-transparent".to_string()],
             base_color: default_texture,
             normal: Default::default(),
+            ..Default::default()
         });
 
         let mut db = Database {
@@ -147,20 +148,20 @@ impl Database {
 
         // Models HAVE to be loaded before materials, as they add materials.
         for (name, mut model) in geometry {
-            info!("Attempting to load model {}...", model.cfg.name);
+            debug!("Attempting to load model {}...", model.cfg.name);
             if model.loaded.is_none() {
                 model.load(base_path, ctx, scene, unsafe { &mut *ptr });
             }
 
             if let Some(m) = model.loaded {
-                info!("Success!");
+                debug!("Success!");
                 for mesh in m.meshes {
-                    info!("Making mesh {}.{} available", model.cfg.name, mesh.name);
+                    debug!("Making mesh {}.{} available", model.cfg.name, mesh.name);
                     db.geometry
-                        .insert(format!("{}.{}", model.cfg.name, mesh.name), mesh.m);
+                        .insert(format!("{}.{}", model.cfg.name, mesh.name), mesh);
                 }
             } else {
-                info!("Failed!");
+                debug!("Failed!");
             }
         }
 
@@ -182,7 +183,7 @@ impl Database {
     }
 
     pub(crate) fn register_texture_from_bytes(&mut self, name: &str, data: &[u8]) {
-        info!(
+        debug!(
             "Registering embedded GLTF model texture from bytes {}..",
             name
         );
@@ -202,7 +203,7 @@ impl Database {
     }
 
     pub(crate) fn register_loaded_texture(&mut self, name: &str, data: &gltf::image::Data) {
-        info!("Registering embedded GLTF model texture {}..", name);
+        debug!("Registering embedded GLTF model texture {}..", name);
         let image =
             unsafe { ImageResource::load_from_gltf(name, data, &mut *self.ctx, &mut *self.scene) };
         self.images.insert(
@@ -239,19 +240,19 @@ impl Database {
         if let Some(thing) = self.materials.get(name) {
             return Ok(*thing);
         } else {
-            info!("Unable to fetch material {}. Returning default...", name);
+            debug!("Unable to fetch material {}. Returning default...", name);
             return Ok(self.defaults.material);
         }
     }
 
-    pub fn fetch_mesh(&mut self, name: &str) -> Result<Handle<miso::Mesh>, Error> {
+    pub fn fetch_mesh(&mut self, name: &str) -> Result<MeshResource, Error> {
         let db: *mut Database = self;
         if let Some(thing) = self.geometry.get_mut(name) {
-            return Ok(*thing);
+            return Ok(thing.clone());
         }
 
-        info!("Unable to fetch model {}. Returning default sphere", name);
-        return Ok(*self.geometry.get_mut("MESHI.SPHERE").unwrap());
+        debug!("Unable to fetch model {}. Returning default sphere", name);
+        return Ok(self.geometry.get("MESHI.CUBE").unwrap().clone());
     }
 }
 

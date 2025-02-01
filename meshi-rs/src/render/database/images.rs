@@ -7,6 +7,7 @@ use image::ImageBuffer;
 use image::Rgba;
 use miso::MisoScene;
 use miso::TextureInfo;
+use tracing::debug;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
 
@@ -125,7 +126,7 @@ impl ImageResource {
             })
             .unwrap();
 
-        info!("Registering URI texture {}..", name);
+        debug!("Registering URI texture {}..", name);
         return scene.register_texture(&TextureInfo {
             image: img,
             view,
@@ -177,7 +178,7 @@ impl ImageResource {
             })
             .unwrap();
 
-        info!("Registering embedded GLTF model texture {}..", name);
+        debug!("Registering embedded GLTF model texture {}..", name);
         return scene.register_texture(&TextureInfo {
             image: img,
             view,
@@ -261,10 +262,10 @@ pub fn load_db_images(base_path: &str, cfg: &json::Database) -> Option<json::Ima
         Some(path) => {
             let rpath = format!("{}/{}", base_path, path);
             let path = &path;
-            info!("Found image path {}", path);
+            debug!("Found image path {}", path);
             match fs::read_to_string(path) {
                 Ok(json_data) => {
-                    info!("Loaded image database registry {}!", path);
+                    debug!("Loaded image database registry {}!", path);
                     let info: json::Image = serde_json::from_str(&json_data).unwrap();
                     return Some(info);
                 }

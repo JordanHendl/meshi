@@ -30,6 +30,7 @@ struct EventCallbackInfo {
     event_cb: extern "C" fn(*mut event::Event, *mut c_void),
     user_data: *mut c_void,
 }
+
 pub struct RenderEngine {
     ctx: Box<dashi::Context>,
     scene: Box<miso::MisoScene>,
@@ -103,7 +104,9 @@ impl RenderEngine {
     ) {
         if let Some(m) = self.mesh_objects.get_ref(handle) {
             info!("Setting transform {}", transform);
-            self.scene.update_object_transform(m.handle, transform);
+            for t in &m.targets {
+                self.scene.update_object_transform(*t, transform);
+            }
         }
     }
 
@@ -120,11 +123,13 @@ impl RenderEngine {
     }
 
     pub fn set_projection(&mut self, proj: &Mat4) {
-        self.scene.update_camera_projection(self.global_camera, proj);
+        self.scene
+            .update_camera_projection(self.global_camera, proj);
     }
 
     pub fn set_camera(&mut self, camera: &Mat4) {
-        self.scene.update_camera_transform(self.global_camera, camera);
+        self.scene
+            .update_camera_transform(self.global_camera, camera);
     }
     pub fn set_event_cb(
         &mut self,

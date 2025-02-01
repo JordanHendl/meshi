@@ -58,7 +58,7 @@ impl MeshiEngine {
 
     fn update(&mut self) -> f32 {
         self.frame_timer.stop();
-        let dt = self.frame_timer.elapsed_ms_f32() / 1000.0;
+        let dt = self.frame_timer.elapsed_micro_f32();
         self.frame_timer.start();
         self.render.update(dt);
 
@@ -75,7 +75,7 @@ extern "C" fn meshi_make_engine(info: &MeshiEngineInfo) -> *mut MeshiEngine {
     let subscriber = FmtSubscriber::builder()
         // all spans/events with a level higher than TRACE (e.g, debug, info, warn, etc.)
         // will be written to stdout.
-        .with_max_level(Level::TRACE)
+        .with_max_level(Level::INFO)
         // completes the builder.
         .finish();
 

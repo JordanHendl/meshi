@@ -175,6 +175,7 @@ impl PhysicsSimulation {
     }
 
     pub fn get_rigid_body_info(&mut self, h: Handle<RigidBody>) -> ActorStatus {
+        assert!(h.valid());
         self.rigid_bodies.get_ref(h).unwrap().into()
     }
 }

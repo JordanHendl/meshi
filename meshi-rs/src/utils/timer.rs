@@ -66,8 +66,21 @@ impl Timer {
         }
     }
 
+    // Get the current elapsed time in milliseconds
+    pub fn elapsed_micro(&self) -> u128 {
+        if let Some(start_time) = self.start_time {
+            if self.is_paused {
+                self.elapsed.as_micros()
+            } else {
+                start_time.elapsed().as_micros()
+            }
+        } else {
+            self.elapsed.as_micros()
+        }
+    }
+
     // Get the current elapsed time in milliseconds as f32
-    pub fn elapsed_ms_f32(&self) -> f32 {
-        self.elapsed_ms() as f32
+    pub fn elapsed_micro_f32(&self) -> f32 {
+        (self.elapsed_micro() as f32 / 1000.0) / 1000.0
     }
 }

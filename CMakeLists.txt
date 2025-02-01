@@ -20,4 +20,5 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(glm)
 
+set(SAMPLE_APP_DIR ${CMAKE_SOURCE_DIR}/sample_app_dir)
 add_subdirectory(src)
