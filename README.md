@@ -3,6 +3,7 @@
 Meshi is my 'engine' project. 
 
 # [Design Goals]
+* Rust Backend (Audio, Graphics, IO, etc) + C++ Frontend for game scripting & object management
 * GPU Driven Rendering
 * Simplified Component System
 
