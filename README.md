@@ -8,7 +8,7 @@ Meshi is my 'engine' project.
 * Simplified Component System
 
 # [TODOs]
-* Lighting
+* Lighting Modes (PBR, Toon, ETC)
 * Better user input controls/wrappers
 * Audio
 * Animations
