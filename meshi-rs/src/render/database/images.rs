@@ -260,7 +260,7 @@ pub fn load_db_images(base_path: &str, cfg: &json::Database) -> Option<json::Ima
     match &cfg.images {
         Some(path) => {
             let rpath = format!("{}/{}", base_path, path);
-            let path = &path;
+            let path = &rpath;
             debug!("Found image path {}", path);
             match fs::read_to_string(path) {
                 Ok(json_data) => {

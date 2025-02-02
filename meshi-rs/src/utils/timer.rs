@@ -5,6 +5,7 @@ pub struct Timer {
     is_paused: bool,
 }
 
+#[allow(dead_code)]
 impl Timer {
     // Create a new timer instance
     pub fn new() -> Timer {

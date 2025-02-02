@@ -1,5 +1,6 @@
 use std::os::raw::c_uint;
 
+#[allow(dead_code)]
 #[repr(C)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum EventType {
@@ -11,6 +12,7 @@ pub enum EventType {
     Motion2D = 5,
 }
 
+#[allow(dead_code)]
 #[repr(C)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum EventSource {
@@ -20,6 +22,7 @@ pub enum EventSource {
     Gamepad = 3,
 }
 
+#[allow(dead_code)]
 #[repr(C)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum KeyCode {

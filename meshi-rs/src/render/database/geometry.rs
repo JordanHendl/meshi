@@ -7,17 +7,6 @@ use tracing::debug;
 use super::{json, Database};
 use std::{collections::HashMap, fs};
 
-pub struct MeshInfo {
-    name: String,
-    vertices: Vec<miso::Vertex>,
-    indices: Vec<u32>,
-}
-
-pub struct GeometryInfo {
-    name: String,
-    meshes: Vec<MeshInfo>,
-}
-
 #[derive(Default, Clone)]
 pub struct SubmeshResource {
     pub m: Handle<miso::Mesh>,
@@ -283,23 +272,24 @@ fn transform_vertex(position: [f32; 3], transform: &Mat4) -> [f32; 3] {
     [pos_vec.x, pos_vec.y, pos_vec.z]
 }
 
+#[allow(dead_code)]
 fn load_gltf_model(path: &str, db: &mut Database) -> Option<Model> {
     debug!("Loading Model {}", path);
-    let (gltf, buffers, images) = gltf::import(path).expect("Failed to load glTF file");
+    let (gltf, buffers, _images) = gltf::import(path).expect("Failed to load glTF file");
     let mut meshes = Vec::new();
-    let mut mesh_name = String::new();
+    let mut _mesh_name = String::new();
     let parent_map = build_parent_map(&gltf);
     for node in gltf.nodes() {
-        let global_transform = compute_node_transform(&node);
+        let _global_transform = compute_node_transform(&node);
         if let Some(mesh) = node.mesh() {
             let mut submeshes = Vec::new();
             let global_transform = compute_global_transform(&node, &parent_map, &gltf);
-            mesh_name = mesh.name().unwrap_or("[UNKNOWN]").to_string();
-            debug!("Loading Mesh {}", mesh_name);
+            _mesh_name = mesh.name().unwrap_or("[UNKNOWN]").to_string();
+            debug!("Loading Mesh {}", _mesh_name);
             for primitive in mesh.primitives() {
                 let mut vertices = Vec::new();
                 let mut indices = Vec::new();
-                let mut material = None;
+                let mut _material = None;
 
                 let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
 
@@ -369,11 +359,14 @@ fn load_gltf_model(path: &str, db: &mut Database) -> Option<Model> {
                     }
 
                     let mut textures = HashMap::new();
+                    const CUSTOM_ENGINE: engine::GeneralPurpose =
+                        engine::GeneralPurpose::new(&alphabet::URL_SAFE, general_purpose::NO_PAD);
 
+                     use base64::{Engine as _, alphabet, engine::{self, general_purpose}};
                     let mut process_texture_func = |tex: gltf::texture::Texture, name, kind| {
-                        let tex_name = format!("{}.{}[{}]", mesh_name, name, submeshes.len());
+                        let tex_name = format!("{}.{}[{}]", _mesh_name, name, submeshes.len());
                         match tex.source().source() {
-                            gltf::image::Source::View { view, mime_type } => {
+                            gltf::image::Source::View { view, mime_type: _ } => {
                                 let buffer = &buffers[view.buffer().index()];
                                 let start = view.offset();
                                 let end = start + view.length();
@@ -381,10 +374,10 @@ fn load_gltf_model(path: &str, db: &mut Database) -> Option<Model> {
 
                                 db.register_texture_from_bytes(&tex_name, &img_bytes);
                             }
-                            gltf::image::Source::Uri { uri, mime_type } => {
+                            gltf::image::Source::Uri { uri, mime_type: _ } => {
                                 if uri.starts_with("data:") {
                                     if let Some((_, base64_data)) = uri.split_once(";base64,") {
-                                        let data = base64::decode(base64_data).unwrap();
+                                        let data = base64::engine::general_purpose::STANDARD.decode(base64_data).unwrap();
                                         db.register_texture_from_bytes(&tex_name, &data);
                                     }
                                 } else {
@@ -417,11 +410,11 @@ fn load_gltf_model(path: &str, db: &mut Database) -> Option<Model> {
 
                     debug!(
                         "REGISTERING MATERIAL NAME : {}.{} with texture len [{}]",
-                        mesh_name,
+                        _mesh_name,
                         mat_name,
                         textures.len()
                     );
-                    material = Some(Material {
+                    _material = Some(Material {
                         name: mat_name,
                         textures,
                         emissive_factor: Vec4::from((Vec3::from_array(mat.emissive_factor()), 1.0)),
@@ -433,7 +426,7 @@ fn load_gltf_model(path: &str, db: &mut Database) -> Option<Model> {
                     submeshes.push(Submesh {
                         vertices,
                         indices,
-                        material: material.unwrap(),
+                        material: _material.unwrap(),
                     });
                 }
             }

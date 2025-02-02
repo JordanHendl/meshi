@@ -30,6 +30,7 @@ struct EventCallbackInfo {
     user_data: *mut c_void,
 }
 
+#[allow(dead_code)]
 pub struct RenderEngine {
     ctx: Box<dashi::Context>,
     scene: Box<miso::Scene>,
@@ -40,6 +41,7 @@ pub struct RenderEngine {
     global_camera: Handle<miso::Camera>,
 }
 
+#[allow(dead_code)]
 impl RenderEngine {
     pub fn new(info: &RenderEngineInfo) -> Self {
         let device = DeviceSelector::new()
@@ -109,7 +111,7 @@ impl RenderEngine {
         }
     }
 
-    pub fn update(&mut self, delta_time: f32) {
+    pub fn update(&mut self, _delta_time: f32) {
         for event in self.event_pump.poll_iter() {
             if let Some(cb) = self.event_cb.as_mut() {
                 let mut e: event::Event = event.into();
@@ -141,7 +143,7 @@ impl RenderEngine {
         });
     }
 
-    pub fn set_scene(&mut self, info: &SceneInfo) {
+    pub fn set_scene(&mut self, _info: &SceneInfo) {
         todo!()
     }
 }

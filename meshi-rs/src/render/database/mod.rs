@@ -17,11 +17,13 @@ pub mod font;
 mod geometry_primitives;
 pub use font::*;
 
+#[allow(dead_code)]
 struct Defaults {
     image: Handle<miso::Texture>,
     material: Handle<miso::Material>,
 }
 
+#[allow(dead_code)]
 pub struct Database {
     ctx: *mut dashi::Context,
     scene: *mut miso::Scene,
@@ -146,7 +148,7 @@ impl Database {
         let ptr: *mut Database = &mut db;
 
         // Models HAVE to be loaded before materials, as they add materials.
-        for (name, mut model) in geometry {
+        for (_name, mut model) in geometry {
             debug!("Attempting to load model {}...", model.cfg.name);
             if model.loaded.is_none() {
                 model.load(base_path, ctx, scene, unsafe { &mut *ptr });
@@ -201,19 +203,6 @@ impl Database {
         );
     }
 
-    pub(crate) fn register_loaded_texture(&mut self, name: &str, data: &gltf::image::Data) {
-        debug!("Registering embedded GLTF model texture {}..", name);
-        let image =
-            unsafe { ImageResource::load_from_gltf(name, data, &mut *self.ctx, &mut *self.scene) };
-        self.images.insert(
-            name.to_string(),
-            ImageResource {
-                cfg: Default::default(),
-                loaded: Some(image),
-            },
-        );
-    }
-
     pub fn fetch_texture(&mut self, name: &str) -> Result<Handle<miso::Texture>, Error> {
         if let Some(thing) = self.images.get_mut(name) {
             if thing.loaded.is_none() {
@@ -245,7 +234,6 @@ impl Database {
     }
 
     pub fn fetch_mesh(&mut self, name: &str) -> Result<MeshResource, Error> {
-        let db: *mut Database = self;
         if let Some(thing) = self.geometry.get_mut(name) {
             return Ok(thing.clone());
         }
