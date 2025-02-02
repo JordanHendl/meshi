@@ -25,7 +25,7 @@ struct Defaults {
 
 pub struct Database {
     ctx: *mut dashi::Context,
-    scene: *mut miso::MisoScene,
+    scene: *mut miso::Scene,
     base_path: String,
     geometry: HashMap<String, MeshResource>,
     images: HashMap<String, ImageResource>,
@@ -42,7 +42,7 @@ impl Database {
     pub fn new(
         base_path: &str,
         ctx: &mut dashi::Context,
-        scene: &mut miso::MisoScene,
+        scene: &mut miso::Scene,
     ) -> Result<Self, Error> {
         info!("Loading Database {}", format!("{}/db.json", base_path));
         let json_data = fs::read_to_string(format!("{}/db.json", base_path))?;

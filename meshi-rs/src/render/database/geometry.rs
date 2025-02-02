@@ -1,7 +1,7 @@
 use dashi::{utils::Handle, BufferInfo, Context};
 use glam::{IVec4, Mat4, Quat, Vec2, Vec3, Vec4};
 use gltf::Gltf;
-use miso::{MisoScene, Vertex};
+use miso::{Scene, Vertex};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, info, Level};
 use tracing_subscriber::FmtSubscriber;
@@ -46,7 +46,7 @@ impl GeometryResource {
         &mut self,
         base_path: &str,
         ctx: &mut Context,
-        scene: &mut MisoScene,
+        scene: &mut Scene,
         db: &mut Database,
     ) {
         let file = format!("{}/{}", base_path, self.cfg.path);

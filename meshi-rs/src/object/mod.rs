@@ -1,10 +1,9 @@
 use crate::render::database::{geometry::MeshResource, Database};
 use dashi::utils::Handle;
 use glam::Mat4;
-use tracing::{info, Level};
-use tracing_subscriber::FmtSubscriber;
+use tracing::info;
 
-use std::ffi::{c_char, c_int, CStr};
+use std::ffi::{c_char, CStr};
 
 #[repr(C)]
 pub struct FFIMeshObjectInfo {
@@ -38,7 +37,7 @@ impl From<&FFIMeshObjectInfo> for MeshObjectInfo {
 }
 
 impl MeshObjectInfo {
-    pub fn make_object(&self, db: &mut Database, scene: &mut miso::MisoScene) -> MeshObject {
+    pub fn make_object(&self, db: &mut Database, scene: &mut miso::Scene) -> MeshObject {
         info!(
             "Registering Mesh Renderable {}||{}",
             self.mesh, self.material

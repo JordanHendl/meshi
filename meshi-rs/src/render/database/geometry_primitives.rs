@@ -18,7 +18,7 @@ impl Default for CubePrimitiveInfo {
 pub fn make_cube(
     info: &CubePrimitiveInfo,
     ctx: &mut dashi::Context,
-    scene: &mut miso::MisoScene,
+    scene: &mut miso::Scene,
 ) -> ModelResource {
     let size = info.size;
 
@@ -156,7 +156,7 @@ impl Default for TrianglePrimitiveInfo {
 pub fn make_triangle(
     info: &TrianglePrimitiveInfo,
     ctx: &mut dashi::Context,
-    scene: &mut miso::MisoScene,
+    scene: &mut miso::Scene,
 ) -> ModelResource {
     let size = info.size;
 
@@ -252,7 +252,7 @@ impl Default for SpherePrimitiveInfo {
 pub fn make_sphere(
     info: &SpherePrimitiveInfo,
     ctx: &mut dashi::Context,
-    scene: &mut miso::MisoScene,
+    scene: &mut miso::Scene,
 ) -> ModelResource {
     let SpherePrimitiveInfo {
         radius,

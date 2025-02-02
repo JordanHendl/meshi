@@ -1,7 +1,7 @@
 use dashi::utils::Handle;
 use tracing::{info, Level};
 use dashi::Context;
-use miso::{MaterialInfo, MisoScene};
+use miso::{MaterialInfo, Scene};
 
 use super::{json, Database};
 use std::collections::HashMap;
@@ -14,7 +14,7 @@ pub struct MaterialResource {
 }
 
 impl MaterialResource {
-    pub fn load(&mut self, scene: &mut MisoScene, db: &mut Database) {
+    pub fn load(&mut self, scene: &mut Scene, db: &mut Database) {
         let base_color = if let Some(s) = self.cfg.base_color.as_ref() {
             db.fetch_texture(&s).unwrap_or_default()
         } else {

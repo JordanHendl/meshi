@@ -5,7 +5,7 @@ use dashi::ImageViewInfo;
 use dashi::SamplerInfo;
 use image::ImageBuffer;
 use image::Rgba;
-use miso::MisoScene;
+use miso::Scene;
 use miso::TextureInfo;
 use tracing::debug;
 use tracing::{info, Level};
@@ -23,7 +23,7 @@ pub struct ImageResource {
 }
 
 impl ImageResource {
-    pub fn load_default_image(ctx: &mut Context, scene: &mut MisoScene) -> Handle<miso::Texture> {
+    pub fn load_default_image(ctx: &mut Context, scene: &mut Scene) -> Handle<miso::Texture> {
         // Define the size of the image
         const WIDTH: u32 = 512;
         const HEIGHT: u32 = 512;
@@ -91,7 +91,7 @@ impl ImageResource {
         name: &str,
         bytes: &[u8],
         ctx: &mut Context,
-        scene: &mut MisoScene,
+        scene: &mut Scene,
     ) -> Handle<miso::Texture> {
         let img = image::load_from_memory(bytes).unwrap();
         // Convert the image to RGBA8 format
@@ -139,7 +139,7 @@ impl ImageResource {
         name: &str,
         data: &gltf::image::Data,
         ctx: &mut Context,
-        scene: &mut MisoScene,
+        scene: &mut Scene,
     ) -> Handle<miso::Texture> {
         // Define the size of the image
 
@@ -187,7 +187,7 @@ impl ImageResource {
         });
     }
 
-    pub fn load_rgba8(&mut self, base_path: &str, ctx: &mut Context, scene: &mut MisoScene) {
+    pub fn load_rgba8(&mut self, base_path: &str, ctx: &mut Context, scene: &mut Scene) {
         let path = &format!("{}/{}", base_path, self.cfg.path.as_str());
         let img = image::open(&path).unwrap_or_default();
 

@@ -51,13 +51,13 @@ extern "C" auto meshi_gfx_create_renderable(meshi::RawGraphicsSystem *,
 
 extern "C" auto meshi_gfx_set_transform(meshi::RawGraphicsSystem *,
                                         meshi::Handle<meshi::gfx::Renderable> &,
-                                        glm::mat4 &) -> void;
+                                        const glm::mat4 &) -> void;
 
 extern "C" auto meshi_gfx_set_camera(meshi::RawGraphicsSystem *,
-                                     glm::mat4 &) -> void;
+                                     const glm::mat4 &) -> void;
 
 extern "C" auto meshi_gfx_set_projection(meshi::RawGraphicsSystem *,
-                                         glm::mat4 &) -> void;
+                                         const glm::mat4 &) -> void;
 
 ////////////////////////////////////////////
 //////////////////PHYSICS///////////////////

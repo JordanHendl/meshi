@@ -33,7 +33,7 @@ struct EventCallbackInfo {
 
 pub struct RenderEngine {
     ctx: Box<dashi::Context>,
-    scene: Box<miso::MisoScene>,
+    scene: Box<miso::Scene>,
     database: Database,
     event_pump: sdl2::EventPump,
     event_cb: Option<EventCallbackInfo>,
@@ -58,9 +58,9 @@ impl RenderEngine {
         // The GPU context that holds all the data.
         let mut ctx = Box::new(gpu::Context::new(&ContextInfo { device }).unwrap());
         let event_pump = ctx.get_sdl_ctx().event_pump().unwrap();
-        let mut scene = Box::new(miso::MisoScene::new(
+        let mut scene = Box::new(miso::Scene::new(
             &mut ctx,
-            &miso::MisoSceneInfo {
+            &miso::SceneInfo {
                 cfg: cfg.scene_cfg_path,
             },
         ));

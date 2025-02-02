@@ -48,7 +48,7 @@ private:
     if (c) {
       auto v = c->view_matrix();
       auto p = c->projection();
-
+      
       m_backend.graphics().set_camera(v);
       m_backend.graphics().set_projection(p);
     }
