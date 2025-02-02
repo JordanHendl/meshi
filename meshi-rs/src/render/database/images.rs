@@ -8,8 +8,7 @@ use image::Rgba;
 use miso::Scene;
 use miso::TextureInfo;
 use tracing::debug;
-use tracing::{info, Level};
-use tracing_subscriber::FmtSubscriber;
+use tracing::info;
 
 use super::json;
 use super::TTFont;

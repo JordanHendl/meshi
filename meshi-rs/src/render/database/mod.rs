@@ -1,8 +1,7 @@
 pub mod error;
 use dashi::utils::Handle;
 use miso::MaterialInfo;
-use tracing::{debug, info, Level};
-use tracing_subscriber::FmtSubscriber;
+use tracing::{debug, info};
 
 pub use error::*;
 pub mod json;

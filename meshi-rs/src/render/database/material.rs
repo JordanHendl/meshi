@@ -1,6 +1,5 @@
 use dashi::utils::Handle;
-use tracing::{info, Level};
-use dashi::Context;
+use tracing::info;
 use miso::{MaterialInfo, Scene};
 
 use super::{json, Database};

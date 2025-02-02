@@ -3,7 +3,7 @@ use crate::render::database::{MeshResource, SubmeshResource};
 use dashi::*;
 use glam::*;
 use miso::MeshInfo;
-use tracing::{info, Level};
+use tracing::info;
 
 pub struct CubePrimitiveInfo {
     size: f32,

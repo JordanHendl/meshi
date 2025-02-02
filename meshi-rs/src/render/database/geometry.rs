@@ -1,13 +1,11 @@
 use dashi::{utils::Handle, BufferInfo, Context};
 use glam::{IVec4, Mat4, Quat, Vec2, Vec3, Vec4};
-use gltf::Gltf;
 use miso::{Scene, Vertex};
 use serde::{Deserialize, Serialize};
-use tracing::{debug, info, Level};
-use tracing_subscriber::FmtSubscriber;
+use tracing::debug;
 
-use super::{json, Database, ImageResource};
-use std::{collections::HashMap, fs, path::Path};
+use super::{json, Database};
+use std::{collections::HashMap, fs};
 
 pub struct MeshInfo {
     name: String,

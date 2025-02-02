@@ -7,8 +7,7 @@ use dashi::{
 use database::Database;
 use glam::Mat4;
 use miso::CameraInfo;
-use tracing::{info, Level};
-use tracing_subscriber::FmtSubscriber;
+use tracing::info;
 
 use crate::object::{FFIMeshObjectInfo, MeshObject, MeshObjectInfo};
 pub mod config;
