@@ -87,6 +87,9 @@ impl RenderEngine {
 
         s
     }
+    pub fn register_directional_light(&mut self, info: &miso::DirectionalLightInfo) -> Handle<miso::DirectionalLight> {
+        self.scene.register_directional_light(info)
+    }
 
     pub fn register_mesh_object(&mut self, info: &FFIMeshObjectInfo) -> Handle<MeshObject> {
         let info: MeshObjectInfo = info.into();

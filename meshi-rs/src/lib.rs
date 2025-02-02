@@ -119,12 +119,29 @@ pub extern "C" fn meshi_gfx_create_renderable(
 }
 
 #[no_mangle]
-pub extern "C" fn meshi_gfx_set_transform(
+pub extern "C" fn meshi_gfx_set_renderable_transform(
     render: &mut RenderEngine,
     h: &Handle<MeshObject>,
     transform: &Mat4,
 ) {
     render.set_mesh_object_transform(*h, transform);
+}
+
+#[no_mangle]
+pub extern "C" fn meshi_gfx_create_directional_light(
+    render: &mut RenderEngine,
+    info: &miso::DirectionalLightInfo,
+) -> Handle<miso::DirectionalLight> {
+    render.register_directional_light(info)
+}
+
+#[no_mangle]
+pub extern "C" fn meshi_gfx_set_directional_light_transform(
+    render: &mut RenderEngine,
+    h: &Handle<miso::DirectionalLight>,
+    transform: &Mat4,
+) {
+    //    render.register_directional_light(info)
 }
 
 #[no_mangle]

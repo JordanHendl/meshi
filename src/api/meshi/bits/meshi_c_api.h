@@ -33,6 +33,12 @@ extern "C" auto meshi_update(meshi::RawEngineBackend *engine) -> float;
 ////////////////////////////////////////////
 
 namespace meshi::gfx {
+struct DirectionalLightInfo {
+  glm::vec4 direction;
+  glm::vec4 color;
+  float intensity;
+  float padding;
+};
 struct RenderableCreateInfo {
   const char *mesh = "";
   const char *material = "";
@@ -40,18 +46,32 @@ struct RenderableCreateInfo {
 };
 
 struct Renderable;
+struct DirectionalLight;
 } // namespace meshi::gfx
 
 extern "C" auto meshi_get_graphics_system(meshi::RawEngineBackend *)
     -> meshi::RawGraphicsSystem *;
 
 extern "C" auto meshi_gfx_create_renderable(meshi::RawGraphicsSystem *,
-                                            meshi::gfx::RenderableCreateInfo &)
+                                            const meshi::gfx::RenderableCreateInfo &)
     -> meshi::Handle<meshi::gfx::Renderable>;
 
-extern "C" auto meshi_gfx_set_transform(meshi::RawGraphicsSystem *,
+extern "C" auto
+meshi_gfx_destroy_renderable(meshi::RawGraphicsSystem *,
+                             meshi::Handle<meshi::gfx::Renderable>) -> void;
+
+extern "C" auto meshi_gfx_set_renderable_transform(meshi::RawGraphicsSystem *,
                                         meshi::Handle<meshi::gfx::Renderable> &,
                                         const glm::mat4 &) -> void;
+
+extern "C" auto
+meshi_gfx_create_directional_light(meshi::RawGraphicsSystem *,
+                                   const meshi::gfx::DirectionalLightInfo &)
+    -> meshi::Handle<meshi::gfx::DirectionalLight>;
+
+extern "C" auto meshi_gfx_destroy_directional_light(
+    meshi::RawGraphicsSystem *,
+    meshi::Handle<meshi::gfx::DirectionalLight>) -> void;
 
 extern "C" auto meshi_gfx_set_camera(meshi::RawGraphicsSystem *,
                                      const glm::mat4 &) -> void;

@@ -7,14 +7,18 @@ namespace meshi {
 
 class GraphicsSystem {
 public:
-  auto create_renderable(gfx::RenderableCreateInfo &info)
+  auto create_renderable(const gfx::RenderableCreateInfo &info)
       -> Handle<gfx::Renderable> {
     return meshi_gfx_create_renderable(m_gfx, info);
+  }
+  
+  auto create_directional_light(const gfx::DirectionalLightInfo& info) -> Handle<gfx::DirectionalLight>{
+    return meshi_gfx_create_directional_light(m_gfx, info);
   }
 
   void set_transform(Handle<gfx::Renderable> &renderable,
                      glm::mat4 &transform) {
-    meshi_gfx_set_transform(m_gfx, renderable, (transform));
+    meshi_gfx_set_renderable_transform(m_gfx, renderable, (transform));
   }
 
   void set_camera(glm::mat4 &view_matrix) {
