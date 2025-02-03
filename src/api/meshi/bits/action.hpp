@@ -13,6 +13,7 @@ namespace meshi {
 // Struct representing an action
 struct Action {
   std::string type; // Action type as a string
+  Event event;
   uint32_t timestamp;
 };
 
@@ -91,7 +92,7 @@ public:
 
   void process_event(const Event &event) {
     for (const auto &[action_type, filter] : action_filters_) {
-      Action action{action_type, event.timestamp};
+      Action action{action_type, event, event.timestamp};
       if (filter(event, action)) {
         for (const auto &[registered_action_type, callback] :
              action_callbacks_) {

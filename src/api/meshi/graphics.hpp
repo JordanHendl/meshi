@@ -28,7 +28,10 @@ public:
   void set_projection(glm::mat4 &projection_matrix) {
     meshi_gfx_set_projection(m_gfx, (projection_matrix));
   }
-
+  
+  inline auto capture_mouse(bool value) -> void {
+    meshi_gfx_capture_mouse(m_gfx, static_cast<int>(value));
+  }
 private:
   friend class EngineBackend;
   GraphicsSystem() = default;

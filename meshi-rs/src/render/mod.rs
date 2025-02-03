@@ -107,7 +107,6 @@ impl RenderEngine {
         transform: &glam::Mat4,
     ) {
         if let Some(m) = self.mesh_objects.get_ref(handle) {
-            info!("Setting transform {}", transform);
             for t in &m.targets {
                 self.scene.update_object_transform(*t, transform);
             }
@@ -130,7 +129,10 @@ impl RenderEngine {
         self.scene
             .update_camera_projection(self.global_camera, proj);
     }
-
+    
+    pub fn set_capture_mouse(&mut self, capture: bool) {
+        self.ctx.get_sdl_ctx().mouse().set_relative_mouse_mode(capture);
+    }
     pub fn set_camera(&mut self, camera: &Mat4) {
         self.scene
             .update_camera_transform(self.global_camera, camera);

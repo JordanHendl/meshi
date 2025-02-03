@@ -8,6 +8,7 @@
 #include <meshi/meshi.hpp>
 
 #include "example_helper.hpp"
+#include "meshi/bits/components/editor_camera_component.hpp"
 
 class Cube : public meshi::Actor {
 public:
@@ -62,7 +63,7 @@ public:
             meshi::engine()->action().make_registry(this))) {
     // Subobjects make up things. Nice for grouping objects together.
     // Note: Transforms do not propagate for subobjects.
-    m_camera = add_subobject<meshi::CameraComponent>();
+    m_camera = add_subobject<meshi::EditorCameraComponent>();
     // Attach components to our root.
     m_camera->attach_to(root_component());
     m_camera->apply_to_world();
@@ -70,90 +71,12 @@ public:
     auto initial_transform = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 5.0, 30.0));
     initial_transform = glm::rotate(initial_transform, (float)glm::radians(0.0), this->up());
     m_camera->set_transform(initial_transform);
-    m_event->register_action("Move Forward", &MyObject::move_camera_forward);
-    m_event->register_action("Move Left", &MyObject::move_camera_left);
-    m_event->register_action("Move Right", &MyObject::move_camera_right);
-    m_event->register_action("Move Back", &MyObject::move_camera_back);
-
-    m_event->register_action("Rotate Up", &MyObject::rotate_camera_up);
-    m_event->register_action("Rotate Down", &MyObject::rotate_camera_down);
-    m_event->register_action("Rotate Left", &MyObject::rotate_camera_left);
-    m_event->register_action("Rotate Right", &MyObject::rotate_camera_right);
   }
 
   auto update(float dt) -> void override { meshi::Denizen::update(dt); }
-
-  static constexpr auto MOVEMENT_SPEED = 1000.0;
-  static constexpr auto ROTATION_SPEED = 1000.0;
-  auto rotate_camera_up(const meshi::Action &action) -> void {
-    auto rotation = this->right();
-    auto rotation_speed =
-        glm::radians(ROTATION_SPEED * meshi::engine()->delta_time());
-    auto transform = glm::rotate(m_camera->world_transform(),
-                                 (float)rotation_speed, rotation);
-    m_camera->set_transform(transform);
-  }
-
-  auto rotate_camera_down(const meshi::Action &action) -> void {
-    auto rotation = -this->right();
-    auto rotation_speed =
-        glm::radians(ROTATION_SPEED * meshi::engine()->delta_time());
-    auto transform = glm::rotate(m_camera->world_transform(),
-                                 (float)rotation_speed, rotation);
-    m_camera->set_transform(transform);
-  }
-
-  auto rotate_camera_left(const meshi::Action &action) -> void {
-    auto rotation = -this->up();
-    auto rotation_speed =
-        glm::radians(ROTATION_SPEED * meshi::engine()->delta_time());
-    auto transform = glm::rotate(m_camera->world_transform(),
-                                 (float)rotation_speed, rotation);
-    m_camera->set_transform(transform);
-  }
-
-  auto rotate_camera_right(const meshi::Action &action) -> void {
-    auto rotation = this->up();
-    auto rotation_speed =
-        glm::radians(ROTATION_SPEED * meshi::engine()->delta_time());
-    auto transform = glm::rotate(m_camera->world_transform(),
-                                 (float)rotation_speed, rotation);
-    m_camera->set_transform(transform);
-  }
-
-  auto move_camera_forward(const meshi::Action &action) -> void {
-    auto translation = this->front() * glm::vec3(MOVEMENT_SPEED *
-                                                 meshi::engine()->delta_time());
-    auto transform = glm::translate(m_camera->world_transform(), translation);
-    m_camera->set_transform(transform);
-  }
-
-  auto move_camera_left(const meshi::Action &action) -> void {
-    auto translation =
-        -this->right() *
-        glm::vec3(MOVEMENT_SPEED * meshi::engine()->delta_time());
-    auto transform = glm::translate(m_camera->world_transform(), translation);
-    m_camera->set_transform(transform);
-  }
-
-  auto move_camera_right(const meshi::Action &action) -> void {
-    auto translation = this->right() * glm::vec3(MOVEMENT_SPEED *
-                                                 meshi::engine()->delta_time());
-    auto transform = glm::translate(m_camera->world_transform(), translation);
-    m_camera->set_transform(transform);
-  }
-
-  auto move_camera_back(const meshi::Action &action) -> void {
-    auto translation =
-        -this->front() *
-        glm::vec3(MOVEMENT_SPEED * meshi::engine()->delta_time());
-    auto transform = glm::translate(m_camera->world_transform(), translation);
-    m_camera->set_transform(transform);
-  }
-
 private:
   std::shared_ptr<meshi::ActionRegister<MyObject>> m_event;
-  meshi::CameraComponent *m_camera = nullptr;
+  meshi::EditorCameraComponent *m_camera = nullptr;
 };
 
 ////////////////////////////////////////////////////////////

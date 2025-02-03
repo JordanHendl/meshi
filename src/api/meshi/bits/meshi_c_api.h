@@ -52,17 +52,19 @@ struct DirectionalLight;
 extern "C" auto meshi_get_graphics_system(meshi::RawEngineBackend *)
     -> meshi::RawGraphicsSystem *;
 
-extern "C" auto meshi_gfx_create_renderable(meshi::RawGraphicsSystem *,
-                                            const meshi::gfx::RenderableCreateInfo &)
+extern "C" auto
+meshi_gfx_create_renderable(meshi::RawGraphicsSystem *,
+                            const meshi::gfx::RenderableCreateInfo &)
     -> meshi::Handle<meshi::gfx::Renderable>;
 
 extern "C" auto
 meshi_gfx_destroy_renderable(meshi::RawGraphicsSystem *,
                              meshi::Handle<meshi::gfx::Renderable>) -> void;
 
-extern "C" auto meshi_gfx_set_renderable_transform(meshi::RawGraphicsSystem *,
-                                        meshi::Handle<meshi::gfx::Renderable> &,
-                                        const glm::mat4 &) -> void;
+extern "C" auto
+meshi_gfx_set_renderable_transform(meshi::RawGraphicsSystem *,
+                                   meshi::Handle<meshi::gfx::Renderable> &,
+                                   const glm::mat4 &) -> void;
 
 extern "C" auto
 meshi_gfx_create_directional_light(meshi::RawGraphicsSystem *,
@@ -78,6 +80,10 @@ extern "C" auto meshi_gfx_set_camera(meshi::RawGraphicsSystem *,
 
 extern "C" auto meshi_gfx_set_projection(meshi::RawGraphicsSystem *,
                                          const glm::mat4 &) -> void;
+
+extern "C" auto meshi_gfx_capture_mouse(meshi::RawGraphicsSystem *,
+                                         std::int32_t) -> void;
+
 
 ////////////////////////////////////////////
 //////////////////PHYSICS///////////////////

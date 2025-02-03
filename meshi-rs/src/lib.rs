@@ -154,6 +154,16 @@ pub extern "C" fn meshi_gfx_set_projection(render: &mut RenderEngine, transform:
     render.set_projection(transform);
 }
 
+#[no_mangle]
+pub extern "C" fn meshi_gfx_capture_mouse(render: &mut RenderEngine, value: i32) {
+    if value == 0 {
+        render.set_capture_mouse(false);
+    } else {
+        render.set_capture_mouse(true);
+    }
+}
+
+
 ////////////////////////////////////////////
 //////////////////PHYSICS///////////////////
 ////////////////////////////////////////////

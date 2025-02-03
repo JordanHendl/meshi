@@ -12,7 +12,7 @@ using vec2 = glm::vec2;
 enum class EventType {
   Unknown = 0,
   Quit = 1,
-  Pressed = 2, 
+  Pressed = 2,
   Released = 3,
   Joystick = 4,
   Motion2D = 5,
@@ -22,7 +22,8 @@ enum class EventSource {
   Unknown = 0,
   Key = 1,
   Mouse = 2,
-  Gamepad = 3,
+  MouseButton = 3,
+  Gamepad = 4,
 };
 
 enum class KeyCode {
@@ -149,6 +150,15 @@ enum class KeyCode {
   // Undefined or custom keys
   Undefined
 };
+enum class MouseButton {
+  Left,
+  Right,
+};
+
+struct MouseButtonPayload {
+  MouseButton button;
+  glm::vec2 position;
+};
 
 struct PressPayload {
   KeyCode key;
@@ -160,7 +170,8 @@ struct Motion2DPayload {
 };
 union Payload {
   PressPayload press;
-  Motion2DPayload motion2d; 
+  Motion2DPayload motion2d;
+  MouseButtonPayload mouse_button;
 };
 
 struct Event {
@@ -248,10 +259,48 @@ public:
         callback(event);
       }
     }
+
+    if (event.source == EventSource::MouseButton) {
+      MouseButton button = event.payload.mouse_button.button;
+      if (event.type == EventType::Pressed) {
+        pressed_buttons_[button] = true;
+      } else if (event.type == EventType::Released) {
+        pressed_buttons_[button] = false;
+      }
+    } else if (event.source == EventSource::Key) {
+      KeyCode key = event.payload.press.key;
+      if (event.type == EventType::Pressed) {
+        pressed_keys_[key] = true;
+      } else if (event.type == EventType::Released) {
+        pressed_keys_[key] = false;
+      }
+    }
+  }
+
+  bool is_pressed(MouseButton button) const {
+    auto it = pressed_buttons_.find(button);
+    return it != pressed_buttons_.end() && it->second;
+  }
+
+  bool is_released(MouseButton button) const {
+    auto it = pressed_buttons_.find(button);
+    return it != pressed_buttons_.end() && !it->second;
+  }
+
+  bool is_pressed(KeyCode key) const {
+    auto it = pressed_keys_.find(key);
+    return it != pressed_keys_.end() && it->second;
+  }
+
+  bool is_released(KeyCode key) const {
+    auto it = pressed_keys_.find(key);
+    return it != pressed_keys_.end() && !it->second;
   }
 
 private:
   EngineBackend *engine_; // Pointer to the Meshi engine backend
+  std::unordered_map<MouseButton, bool> pressed_buttons_;
+  std::unordered_map<KeyCode, bool> pressed_keys_;
   std::vector<FilteredCallback>
       callbacks_; // List of registered callbacks with filters
 };

@@ -11,7 +11,11 @@ public:
   ////NON-VIRTUAL FUNCTIONS/////////////////////////////
   //////////////////////////////////////////////////////
 
-  inline auto update(float dt) -> void override {}
+  inline auto update(float dt) -> void override {
+    for(auto child: m_children) {
+      child->update(dt);
+    }
+  }
 
   inline auto front() -> glm::vec3 { return m_front; }
 
@@ -30,7 +34,7 @@ public:
   inline auto set_transform(glm::mat4 &transform) -> void {
     m_right = glm::vec3(transform[0]);
     m_up = glm::vec3(transform[1]);   
-    m_front = glm::vec3(transform[2]);
+    m_front = -glm::vec3(transform[2]);
     m_transform = transform;
   }
 

@@ -19,7 +19,8 @@ pub enum EventSource {
     Unknown = 0,
     Key = 1,
     Mouse = 2,
-    Gamepad = 3,
+    MouseButton = 3,
+    Gamepad = 4,
 }
 
 #[allow(dead_code)]
@@ -152,9 +153,9 @@ pub enum KeyCode {
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
-pub struct Vec2 {
-    x: f32,
-    y: f32,
+pub enum MouseButton {
+    Left,
+    Right,
 }
 
 #[repr(C)]
@@ -171,10 +172,18 @@ pub struct Motion2DPayload {
 }
 
 #[repr(C)]
+#[derive(Debug, Clone, Copy)]
+struct MouseButtonPayload {
+    button: MouseButton,
+    pos: Vec2,
+}
+
+#[repr(C)]
 #[derive(Clone, Copy)]
 pub union Payload {
     press: PressPayload,
     motion2d: Motion2DPayload,
+    mouse_button: MouseButtonPayload,
 }
 
 #[repr(C)]
@@ -186,6 +195,7 @@ pub struct Event {
     timestamp: c_uint,
 }
 
+use glam::{vec2, Vec2};
 use sdl2::event::Event as SdlEvent;
 use sdl2::keyboard::Keycode as SdlKeycode;
 
@@ -194,7 +204,7 @@ impl From<SdlEvent> for Event {
         match sdl_event {
             SdlEvent::Quit { timestamp } => Event {
                 event_type: EventType::Quit,
-                source: EventSource::Unknown, 
+                source: EventSource::Unknown,
                 payload: Payload {
                     press: PressPayload {
                         key: KeyCode::Undefined,
@@ -235,7 +245,41 @@ impl From<SdlEvent> for Event {
                 },
                 timestamp,
             },
+            SdlEvent::MouseButtonDown {
+                timestamp,
+                mouse_btn,
+                x,
+                y,
+                ..
+            } => Event {
+                event_type: EventType::Pressed,
+                source: EventSource::MouseButton,
+                payload: Payload {
+                    mouse_button: MouseButtonPayload {
+                        button: map_sdl_mouse_button(mouse_btn),
+                        pos: vec2(x as f32, y as f32),
+                    },
+                },
+                timestamp,
+            },
 
+            SdlEvent::MouseButtonUp {
+                timestamp,
+                mouse_btn,
+                x,
+                y,
+                ..
+            } => Event {
+                event_type: EventType::Released,
+                source: EventSource::MouseButton,
+                payload: Payload {
+                    mouse_button: MouseButtonPayload {
+                        button: map_sdl_mouse_button(mouse_btn),
+                        pos: vec2(x as f32, y as f32),
+                    },
+                },
+                timestamp,
+            },
             SdlEvent::MouseMotion {
                 timestamp,
                 xrel,
@@ -270,6 +314,16 @@ impl From<SdlEvent> for Event {
     }
 }
 
+fn map_sdl_mouse_button(button: sdl2::mouse::MouseButton) -> MouseButton {
+    match button {
+        sdl2::mouse::MouseButton::Unknown => return MouseButton::Left,
+        sdl2::mouse::MouseButton::Left => return MouseButton::Left,
+        sdl2::mouse::MouseButton::Middle => todo!(),
+        sdl2::mouse::MouseButton::Right => return MouseButton::Right,
+        sdl2::mouse::MouseButton::X1 => todo!(),
+        sdl2::mouse::MouseButton::X2 => todo!(),
+    }
+}
 /// Helper function to map `sdl2::keyboard::Keycode` to `KeyCode`
 fn map_sdl_keycode(sdl_keycode: SdlKeycode) -> KeyCode {
     match sdl_keycode {
@@ -339,4 +393,3 @@ fn map_sdl_keycode(sdl_keycode: SdlKeycode) -> KeyCode {
         _ => KeyCode::Undefined,
     }
 }
-
