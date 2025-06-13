@@ -68,12 +68,15 @@ public:
     m_camera->attach_to(root_component());
     m_camera->apply_to_world();
 
-    auto initial_transform = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 5.0, 30.0));
-    initial_transform = glm::rotate(initial_transform, (float)glm::radians(0.0), this->up());
+    auto initial_transform =
+        glm::translate(glm::mat4(1.0), glm::vec3(0.0, 5.0, 30.0));
+    initial_transform =
+        glm::rotate(initial_transform, (float)glm::radians(0.0), this->up());
     m_camera->set_transform(initial_transform);
   }
 
   auto update(float dt) -> void override { meshi::Denizen::update(dt); }
+
 private:
   std::shared_ptr<meshi::ActionRegister<MyObject>> m_event;
   meshi::EditorCameraComponent *m_camera = nullptr;

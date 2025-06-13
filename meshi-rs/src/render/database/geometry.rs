@@ -6,6 +6,42 @@ use tracing::debug;
 
 use super::{json, Database};
 use std::{collections::HashMap, fs};
+#[derive(Debug, Clone)]
+pub struct Joint {
+    pub name: String,
+    pub node_index: usize,
+    pub inverse_bind_matrix: Mat4,
+}
+
+#[derive(Debug, Clone)]
+pub struct Skeleton {
+    pub joints: Vec<Joint>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Keyframe {
+    pub time: f32,
+    pub translation: Vec3,
+    pub rotation: Quat,
+    pub scale: Vec3,
+}
+
+#[derive(Debug, Clone)]
+pub struct BoneAnimation {
+    pub bone_name: String,
+    pub keyframes: Vec<Keyframe>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Animation {
+    pub name: String,
+    pub bones: Vec<BoneAnimation>,
+}
+
+#[derive(Debug, Clone)]
+pub struct AnimationSet {
+    pub animations: Vec<Animation>,
+}
 
 #[derive(Default, Clone)]
 pub struct SubmeshResource {
@@ -39,7 +75,7 @@ impl GeometryResource {
         let file = format!("{}/{}", base_path, self.cfg.path);
 
         let mut meshes = Vec::new();
-        if let Some(gltf) = load_gltf_model(&file, db) {
+        if let Some((gltf, skeleton, anim)) = load_gltf_model(&file, db) {
             for mesh in gltf.meshes {
                 let mut submeshes = Vec::new();
                 for (idx, submesh) in mesh.sub_meshes.iter().enumerate() {
@@ -273,7 +309,10 @@ fn transform_vertex(position: [f32; 3], transform: &Mat4) -> [f32; 3] {
 }
 
 #[allow(dead_code)]
-fn load_gltf_model(path: &str, db: &mut Database) -> Option<Model> {
+fn load_gltf_model(
+    path: &str,
+    db: &mut Database,
+) -> Option<(Model, Option<Skeleton>, Option<AnimationSet>)> {
     debug!("Loading Model {}", path);
     let (gltf, buffers, _images) = gltf::import(path).expect("Failed to load glTF file");
     let mut meshes = Vec::new();
@@ -362,7 +401,11 @@ fn load_gltf_model(path: &str, db: &mut Database) -> Option<Model> {
                     const CUSTOM_ENGINE: engine::GeneralPurpose =
                         engine::GeneralPurpose::new(&alphabet::URL_SAFE, general_purpose::NO_PAD);
 
-                     use base64::{Engine as _, alphabet, engine::{self, general_purpose}};
+                    use base64::{
+                        alphabet,
+                        engine::{self, general_purpose},
+                        Engine as _,
+                    };
                     let mut process_texture_func = |tex: gltf::texture::Texture, name, kind| {
                         let tex_name = format!("{}.{}[{}]", _mesh_name, name, submeshes.len());
                         match tex.source().source() {
@@ -377,7 +420,9 @@ fn load_gltf_model(path: &str, db: &mut Database) -> Option<Model> {
                             gltf::image::Source::Uri { uri, mime_type: _ } => {
                                 if uri.starts_with("data:") {
                                     if let Some((_, base64_data)) = uri.split_once(";base64,") {
-                                        let data = base64::engine::general_purpose::STANDARD.decode(base64_data).unwrap();
+                                        let data = base64::engine::general_purpose::STANDARD
+                                            .decode(base64_data)
+                                            .unwrap();
                                         db.register_texture_from_bytes(&tex_name, &data);
                                     }
                                 } else {
@@ -437,6 +482,113 @@ fn load_gltf_model(path: &str, db: &mut Database) -> Option<Model> {
             });
         }
     }
+    let mut joints = Vec::new();
 
-    Some(Model { meshes })
+    if let Some(skin) = gltf.skins().next() {
+        let reader = skin.reader(|buffer| Some(&buffers[buffer.index()]));
+        let inverse_bind_matrices: Vec<Mat4> = reader
+            .read_inverse_bind_matrices()
+            .unwrap()
+            .map(|m| Mat4::from_cols_array_2d(&m))
+            .collect();
+
+        for (i, joint) in skin.joints().enumerate() {
+            let name = joint.name().unwrap_or("[UNNAMED]").to_string();
+            joints.push(Joint {
+                name,
+                node_index: joint.index(),
+                inverse_bind_matrix: inverse_bind_matrices
+                    .get(i)
+                    .cloned()
+                    .unwrap_or(Mat4::IDENTITY),
+            });
+        }
+    }
+
+    let skeleton_opt = if !joints.is_empty() {
+        Some(Skeleton { joints })
+    } else {
+        None
+    };
+
+    let mut animations = Vec::new();
+
+    for anim in gltf.animations() {
+        let name = anim.name().unwrap_or("Unnamed").to_string();
+        let mut bones = Vec::new();
+
+        for channel in anim.channels() {
+            let target = channel.target();
+            let node = target.node();
+            let bone_name = node.name().unwrap_or("[NO NAME]").to_string();
+
+            let reader = channel.reader(|buffer| Some(&buffers[buffer.index()]));
+            let times: Vec<f32> = reader.read_inputs().unwrap().collect();
+
+            let mut keyframes = Vec::new();
+
+            match (channel.target().property(), reader.read_outputs().unwrap()) {
+                (
+                    gltf::animation::Property::Translation,
+                    gltf::animation::util::ReadOutputs::Translations(translations),
+                ) => {
+                    for (t, i) in translations.zip(times.iter()) {
+                        let [x, y, z] = t;
+                        keyframes.push(Keyframe {
+                            time: *i,
+                            translation: Vec3::new(x, y, z),
+                            rotation: Quat::IDENTITY,
+                            scale: Vec3::ONE,
+                        });
+                    }
+                }
+                (
+                    gltf::animation::Property::Rotation,
+                    gltf::animation::util::ReadOutputs::Rotations(rotations),
+                ) => {
+                    for (r, i) in rotations.into_f32().zip(times.iter()) {
+                        let [x, y, z, w] = r;
+                        keyframes.push(Keyframe {
+                            time: *i,
+                            translation: Vec3::ZERO,
+                            rotation: Quat::from_array([x, y, z, w]),
+                            scale: Vec3::ONE,
+                        });
+                    }
+                }
+                (
+                    gltf::animation::Property::Scale,
+                    gltf::animation::util::ReadOutputs::Scales(scales),
+                ) => {
+                    for (s, i) in scales.zip(times.iter()) {
+                        let [x, y, z] = s;
+                        keyframes.push(Keyframe {
+                            time: *i,
+                            translation: Vec3::ZERO,
+                            rotation: Quat::IDENTITY,
+                            scale: Vec3::new(x, y, z),
+                        });
+                    }
+                }
+                _ => {}
+            }
+
+            if !keyframes.is_empty() {
+                bones.push(BoneAnimation {
+                    bone_name,
+                    keyframes,
+                });
+            }
+        }
+
+        animations.push(Animation { name, bones });
+    }
+
+    let animation_set_opt = if animations.is_empty() {
+        None
+    } else {
+        Some(AnimationSet { animations })
+    };
+
+    Some((Model { meshes }, skeleton_opt, animation_set_opt))
 }
