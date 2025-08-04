@@ -4,7 +4,7 @@
 #include <string>
 
 #include <meshi/bits/util/result.hpp>
-#include <meshi/bits/meshi.h>
+#include <meshi/meshi.h>
 
 namespace meshi {
 namespace detail {
