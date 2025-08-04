@@ -1,48 +1,66 @@
 #pragma once
 #include <glm/glm.hpp>
-#include <meshi/bits/meshi_c_api.h>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <meshi/meshi.h>
 #include <meshi/bits/meshi_loader.hpp>
+#include "meshi/types.hpp"
 
 namespace meshi {
 
 class PhysicsSystem {
 public:
-  auto
-  create_material(PhysicsMaterialCreateInfo &info) -> Handle<PhysicsMaterial> {
-    return detail::api().meshi_physx_create_material(m_phys, info);
+  auto create_material(PhysicsMaterialCreateInfo &info)
+      -> Handle<PhysicsMaterial> {
+    return detail::api().meshi_physx_create_material(m_phys, &info);
   }
 
   void release_material(Handle<PhysicsMaterial> &material) {
-    detail::api().meshi_physx_release_material(m_phys, material);
+    detail::api().meshi_physx_release_material(m_phys, &material);
   }
 
   auto create_rigid_body(RigidBodyCreateInfo &info) -> Handle<RigidBody> {
-    return detail::api().meshi_physx_create_rigid_body(m_phys, m_gfx, info);
+    MeshiRigidBodyInfo ffi{};
+    ffi.material = info.material;
+    ffi.initial_position = {info.initial_position.x, info.initial_position.y,
+                           info.initial_position.z};
+    ffi.initial_velocity = {info.initial_velocity.x, info.initial_velocity.y,
+                           info.initial_velocity.z};
+    ffi.initial_rotation = {info.initial_rotation.x, info.initial_rotation.y,
+                           info.initial_rotation.z, info.initial_rotation.w};
+    ffi.has_gravity = info.has_gravity;
+    ffi.collision_shape = MeshiCollisionShape{}; // default
+    return detail::api().meshi_physx_create_rigid_body(m_phys, &ffi);
   }
 
   void release_rigid_body(Handle<RigidBody> &rigidBody) {
-    detail::api().meshi_physx_release_rigid_body(m_phys, rigidBody);
+    detail::api().meshi_physx_release_rigid_body(m_phys, &rigidBody);
   }
 
   void apply_force_to_rigid_body(Handle<RigidBody> &rigidBody,
                                  ForceApplyInfo &info) {
-    detail::api().meshi_physx_apply_force_to_rigid_body(m_phys, rigidBody, info);
+    detail::api().meshi_physx_apply_force_to_rigid_body(m_phys, &rigidBody,
+                                                        &info);
   }
 
-  auto
-  get_rigid_body_status(Handle<RigidBody> &rigidBody) -> PhysicsActorStatus & {
-    return detail::api().meshi_physx_get_rigid_body_status(m_phys, rigidBody);
+  auto get_rigid_body_status(Handle<RigidBody> &rigidBody)
+      -> PhysicsActorStatus {
+    MeshiActorStatus ffi{};
+    detail::api().meshi_physx_get_rigid_body_status(m_phys, &rigidBody, &ffi);
+    PhysicsActorStatus status{};
+    status.position = {ffi.position.x, ffi.position.y, ffi.position.z};
+    status.rotation = {ffi.rotation.w, ffi.rotation.x, ffi.rotation.y,
+                       ffi.rotation.z};
+    return status;
   }
 
 private:
   friend class EngineBackend;
   PhysicsSystem() = default;
-  PhysicsSystem(RawPhysicsSystem *ptr, RawGraphicsSystem *gfx)
-      : m_phys(ptr), m_gfx(gfx) {}
+  explicit PhysicsSystem(RawPhysicsSystem *ptr) : m_phys(ptr) {}
   ~PhysicsSystem() = default;
 
-  RawGraphicsSystem *m_gfx;
-  RawPhysicsSystem *m_phys;
+  RawPhysicsSystem *m_phys{};
 };
 
 } // namespace meshi

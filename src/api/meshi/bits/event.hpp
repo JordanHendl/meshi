@@ -220,11 +220,34 @@ public:
 
   // Constructor to initialize the event handler with the Meshi engine
   explicit EventHandler(EngineBackend *engine) : engine_(engine) {
-    // Register the global callback function to the engine
     engine->register_event_callback(
-        this, // Pass the instance as user_data
-        [](Event &event, void *user_data) {
-          static_cast<EventHandler *>(user_data)->process_event(event);
+        this,
+        [](MeshiEvent *ev, void *user_data) {
+          Event e{};
+          e.type = static_cast<EventType>(ev->event_type);
+          e.source = static_cast<EventSource>(ev->source);
+          e.timestamp = ev->timestamp;
+          switch (e.type) {
+          case EventType::Pressed:
+          case EventType::Released:
+            e.payload.press.key = static_cast<KeyCode>(ev->payload.press.key);
+            e.payload.press.previous =
+                static_cast<EventType>(ev->payload.press.previous);
+            break;
+          case EventType::Motion2D:
+            e.payload.motion2d.motion =
+                {ev->payload.motion2d.motion.x, ev->payload.motion2d.motion.y};
+            break;
+          default:
+            break;
+          }
+          if (e.source == EventSource::MouseButton) {
+            e.payload.mouse_button.button =
+                static_cast<MouseButton>(ev->payload.mouse_button.button);
+            e.payload.mouse_button.position =
+                {ev->payload.mouse_button.pos.x, ev->payload.mouse_button.pos.y};
+          }
+          static_cast<EventHandler *>(user_data)->process_event(e);
         });
   }
 
