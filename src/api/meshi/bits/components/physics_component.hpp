@@ -2,6 +2,8 @@
 #include "meshi/bits/components/renderable_component.hpp"
 #include "meshi/engine.hpp"
 #include <meshi/bits/util/slice.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/quaternion.hpp>
 namespace meshi {
 class PhysicsComponent : public ActorComponent {
 public:
@@ -33,11 +35,10 @@ public:
     if (root) {
       auto c = root->as_type<ActorComponent>();
       if (c) {
-        c->set_transform(engine()
-                             ->backend()
-                             .physics()
-                             .get_rigid_body_status(m_handle)
-                             .transform);
+        auto status = engine()->backend().physics().get_rigid_body_status(m_handle);
+        auto mat = glm::translate(glm::mat4(1.0f), status.position) *
+                   glm::toMat4(status.rotation);
+        c->set_transform(mat);
       }
     }
   }

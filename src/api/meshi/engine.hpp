@@ -21,7 +21,8 @@ public:
   static auto make(EngineInfo info) -> Result<Engine, Error> {
     const auto backend_info = EngineBackendInfo{
         .application_name = info.application_name.c_str(),
-        .application_root = info.application_root.c_str(),
+        .application_location = info.application_root.c_str(),
+        .headless = 0,
     };
 
     return make_result<Engine, Error>(Engine(backend_info));
