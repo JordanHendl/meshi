@@ -16,8 +16,11 @@ target_compile_features(meshi INTERFACE cxx_std_17) # Adjust standard as needed
 target_compile_options(meshi INTERFACE -Wno-return-type-c-linkage)
 
 # Optional: Add any dependencies for the interface target
-target_link_libraries(meshi INTERFACE meshi-rs glm)
-add_dependencies(meshi meshi-rs)
+target_link_libraries(meshi INTERFACE glm)
+if(UNIX)
+    target_link_libraries(meshi INTERFACE dl)
+endif()
+add_dependencies(meshi download_meshi_rs copy_meshi_library)
 target_sources(meshi INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/meshi/bits/meshi_loader.cpp>
 )
