@@ -1,6 +1,7 @@
 #pragma once
-#include <meshi/bits/components/mesh_component.hpp>
+#include <meshi/bits/components/actor_component.hpp>
 #include <meshi/bits/util/slice.hpp>
+#include <meshi/engine.hpp>
 namespace meshi {
 class DirectionalLightComponent : public ActorComponent {
 public:
