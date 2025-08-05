@@ -1,6 +1,7 @@
 #pragma once
 #include "meshi/bits/objects/base.hpp"
 #include <algorithm>
+#include <iterator>
 #include <glm/glm.hpp>
 #include <memory>
 #include <string>
