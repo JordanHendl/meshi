@@ -1,5 +1,5 @@
 #pragma once
-#include "meshi/bits/components/renderable_component.hpp"
+#include "meshi/bits/components/actor_component.hpp"
 #include "meshi/engine.hpp"
 #include <meshi/bits/util/slice.hpp>
 #include <glm/gtc/matrix_transform.hpp>
