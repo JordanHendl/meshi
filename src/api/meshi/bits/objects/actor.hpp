@@ -1,4 +1,5 @@
 #pragma once
+#include <unordered_map>
 #include <meshi/bits/objects/base.hpp>
 #include <meshi/bits/components/actor_component.hpp>
 namespace meshi {
