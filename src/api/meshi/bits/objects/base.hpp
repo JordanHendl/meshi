@@ -8,7 +8,7 @@
 namespace meshi {
 class Component;
 
-// Basis of all Objects. 
+// Basis of all Objects.
 // Can contain sub-objects.
 // Can be activated/deactivated.
 class Object {
@@ -52,7 +52,7 @@ public:
   }
 
   template <typename T> inline auto is_type() -> bool {
-    return (std::dynamic_pointer_cast<T>(this));
+    return dynamic_cast<T *>(this) != nullptr;
   }
 
   // Provides filtered vector of all subobjects of that type
