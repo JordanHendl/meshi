@@ -223,8 +223,8 @@ public:
     // Register the global callback function to the engine
     engine->register_event_callback(
         this, // Pass the instance as user_data
-        [](Event &event, void *user_data) {
-          static_cast<EventHandler *>(user_data)->process_event(event);
+        [](::Event* event, void *user_data) {
+          static_cast<EventHandler *>(user_data)->process_event(*reinterpret_cast<meshi::Event*>(event));
         });
   }
 

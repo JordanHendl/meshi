@@ -33,11 +33,8 @@ public:
     if (root) {
       auto c = root->as_type<ActorComponent>();
       if (c) {
-        c->set_transform(engine()
-                             ->backend()
-                             .physics()
-                             .get_rigid_body_status(m_handle)
-                             .transform);
+        auto status = engine()->backend().physics().get_rigid_body_status(m_handle);
+        c->set_transform(status.transform);
       }
     }
   }
