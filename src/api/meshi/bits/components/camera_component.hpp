@@ -2,6 +2,8 @@
 #define GLM_FORCE_LEFT_HANDED
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include "glm/ext/matrix_clip_space.hpp"
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/matrix_inverse.hpp>
 #include <meshi/bits/components/actor_component.hpp>
 namespace meshi { 
 class CameraComponent;
