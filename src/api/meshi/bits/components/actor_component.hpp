@@ -41,7 +41,6 @@ public:
 private:
   friend class Actor;
   glm::mat4 m_transform = glm::mat4(1.0);
-  ;
   glm::vec3 m_front = {0.0, 0.0, 1.0};
   glm::vec3 m_right = {1.0, 0.0, 0.0};
   glm::vec3 m_up = {0.0, 1.0, 0.0};
