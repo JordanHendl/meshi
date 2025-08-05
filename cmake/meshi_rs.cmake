@@ -43,13 +43,6 @@ add_custom_command(
 
 add_custom_target(extract_meshi_headers DEPENDS ${MESHI_RS_HEADERS_PATH})
 
-add_custom_command(
-  OUTPUT ${MESHI_RS_LIBRARY_PATH}
-  DEPENDS ${MESHI_RS_DOWNLOAD}
-  COMMAND ${CMAKE_COMMAND} -E copy ${MESHI_RS_DOWNLOAD} ${MESHI_RS_LIBRARY_PATH}
-  COMMENT "Copying meshi-rs library to ${MESHI_RS_LIBRARY_PATH}"
-)
-
 add_custom_target(copy_meshi_library DEPENDS ${MESHI_RS_LIBRARY_PATH})
 
 add_library(meshi-rs SHARED IMPORTED)
