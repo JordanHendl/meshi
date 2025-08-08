@@ -6,29 +6,17 @@
 #include <memory>
 #include <meshi/meshi.h>
 #include "meshi/types.hpp"
-#include <meshi/bits/meshi_loader.hpp>
 #include <meshi/graphics.hpp>
 #include <meshi/physics.hpp>
-#include <mutex>
-#include <string>
 namespace meshi {
 
 class EngineBackend {
 public:
   explicit EngineBackend(const EngineBackendInfo &info) {
-    static std::once_flag flag;
-    std::call_once(flag, [&]() {
-      auto result = detail::load_meshi_api(info.application_location);
-      if (result.is_err()) {
-        throw std::runtime_error(result.err());
-      }
-    });
+    engine_ = meshi_make_engine(&info);
 
-    auto &api = detail::api();
-    engine_ = api.meshi_make_engine(&info);
-
-    auto raw_phys = api.meshi_get_physics_system(engine_);
-    auto raw_gfx = api.meshi_get_graphics_system(engine_);
+    auto raw_phys = meshi_get_physics_system(engine_);
+    auto raw_gfx = meshi_get_graphics_system(engine_);
     m_phys = PhysicsSystem(raw_phys);
     m_gfx = GraphicsSystem(raw_gfx);
   }
@@ -37,10 +25,10 @@ public:
 
   void register_event_callback(void *user_data,
                                void (*callback)(MeshiEvent *, void *)) {
-    detail::api().meshi_register_event_callback(engine_, user_data, callback);
+    meshi_register_event_callback(engine_, user_data, callback);
   }
 
-  float update() { return detail::api().meshi_update(engine_); }
+  float update() { return meshi_update(engine_); }
 
   inline auto physics() -> PhysicsSystem & { return m_phys; }
 
