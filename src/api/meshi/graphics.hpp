@@ -5,7 +5,6 @@
 #include <cstring>
 #include <meshi/meshi.h>
 #include "meshi/types.hpp"
-#include <meshi/bits/meshi_loader.hpp>
 
 namespace meshi {
 
@@ -18,7 +17,7 @@ public:
         info.material,
         to_meshi_mat4(info.transform),
     };
-    return detail::api().meshi_gfx_create_renderable(m_gfx, &ffi_info);
+    return meshi_gfx_create_renderable(m_gfx, &ffi_info);
   }
 
   auto create_directional_light(const gfx::DirectionalLightInfo &info)
@@ -28,27 +27,27 @@ public:
                      info.direction.w};
     ffi.color = {info.color.x, info.color.y, info.color.z, info.color.w};
     ffi.intensity = info.intensity;
-    return detail::api().meshi_gfx_create_directional_light(m_gfx, &ffi);
+    return meshi_gfx_create_directional_light(m_gfx, &ffi);
   }
 
   void set_transform(Handle<gfx::Renderable> &renderable,
                      const glm::mat4 &transform) {
     MeshiMat4 t = to_meshi_mat4(transform);
-    detail::api().meshi_gfx_set_renderable_transform(m_gfx, renderable, &t);
+    meshi_gfx_set_renderable_transform(m_gfx, renderable, &t);
   }
 
   void set_camera(const glm::mat4 &view_matrix) {
     MeshiMat4 t = to_meshi_mat4(view_matrix);
-    detail::api().meshi_gfx_set_camera(m_gfx, &t);
+    meshi_gfx_set_camera(m_gfx, &t);
   }
 
   void set_projection(const glm::mat4 &projection_matrix) {
     MeshiMat4 t = to_meshi_mat4(projection_matrix);
-    detail::api().meshi_gfx_set_projection(m_gfx, &t);
+    meshi_gfx_set_projection(m_gfx, &t);
   }
   
   inline auto capture_mouse(bool value) -> void {
-    detail::api().meshi_gfx_capture_mouse(m_gfx, static_cast<int>(value));
+    meshi_gfx_capture_mouse(m_gfx, static_cast<int>(value));
   }
 private:
   friend class EngineBackend;
